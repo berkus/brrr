@@ -18,8 +18,8 @@ use {
     carma::{
         assets::car_asset::{CarAsset, CarAssetLoader},
         support::{
-            camera::CameraState, car::Car, logger, render_manager::RenderManager,
-            visitor::visit_files,
+            brender::model::Model, camera::CameraState, car::Car, logger,
+            render_manager::RenderManager, visitor::visit_files,
         },
     },
     cgmath::Vector3,
@@ -47,14 +47,25 @@ use {
 // PIX
 
 fn setup_cars(
-    _commands: Commands,
-    asset_server: ResMut<AssetServer>,
+    mut commands: Commands,
+    // asset_server: ResMut<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut images: ResMut<Assets<Image>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     // mut textures: ResMut<Assets<Texture>>,
     // mut texture_atlases: ResMut<Assets<TextureAtlas>>,
 ) /*-> Result<Vec<Car>>*/
 {
     // bevy @todo: load all textures into the texture atlas
     // TextureAtlasBuilder
+
+    let models = Model::load_many("assets/DecodedData/DATA/MODELS/NETCITYA.DAT".into())
+        .expect("Load models");
+
+    // models.extend(
+    //     Model::load_many("assets/DecodedData/DATA/MODELS/CITYA.DAT".into())
+    //         .expect("Load more models"),
+    // );
 
     // I'd say use the bevy_gltf crate/plugin as a reference: https://github.com/bevyengine/bevy/tree/master/crates/bevy_gltf/src
     // Specifically, you need to implement AssetLoader<MyAsset>  for MyAssetLoader and call:
@@ -64,7 +75,7 @@ fn setup_cars(
     // add handler for ENC assets, then
     // asset_server.add_handler(crate::support::car::CarLoadRequestHandler);
     // asset_server.add_loader(crate::support::car::CarLoader);
-    let _handle = asset_server.load_folder("DecodedData/DATA/CARS");
+    // let _handle = asset_server.load_folder("DecodedData/DATA/CARS");
 
     // let texture_handle = asset_server
     //     .load_sync(
@@ -107,98 +118,21 @@ fn setup_cars(
     // Ok(cars)
 
     // commands
-    //     .spawn(Camera2dComponents::default())
     //     .spawn(SpriteSheetComponents {
     //         texture_atlas: texture_atlas_handle,
     //         scale: Scale(6.0),
     //         ..Default::default()
     //     })
     //     .with(Timer::from_seconds(0.1));
-}
-
-#[throws]
-fn main() {
-    logger::setup_logging().expect("failed to initialize logging");
-
-    // let cars = setup_textures()?;
-    // let mut render_manager = RenderManager::new(&display);
-    // for car in &cars {
-    //     render_manager.prepare_car(car, &display);
-    // }
-
-    let mut app = App::new();
-
-    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins(WorldInspectorPlugin::new())
-        .add_plugins(LookTransformPlugin)
-        .add_plugins(UnrealCameraPlugin::default())
-        .add_systems(Startup, (setup_cars, setup))
-        .add_systems(Update, rotate);
-    // .add_system(animate_camera)
-
-    app.register_asset_loader(CarAssetLoader)
-        .init_asset::<CarAsset>();
-
-    // app.configure_sets(Update, (
-    //     MainMenuSet
-    //         .run_if(in_state(MainMenu)),
-    //     GameplaySet
-    //         .run_if(in_state(InGame)),
-    //     InputSet
-    //         .in_set(GameplaySet),
-    //     EnemyAiSet
-    //         .in_set(GameplaySet)
-    //         .run_if(not(cutscene))
-    //         .after(player_movement),
-    //     AudioSet
-    //         .run_if(not(audio_muted)),
-    // ));
-
-    app.run();
-
-    //         Event::RedrawRequested(_) => {
-    //             for car in &cars {
-    //                 render_manager.draw_car(car, &mut frame, &camera);
-    //             }
-    //         }
-}
-
-/// A marker component for our shapes so we can query them separately from the ground plane
-#[derive(Component)]
-struct Shape;
-
-const X_EXTENT: f32 = 14.;
-
-// fn setup() {
-//     commands.spawn(Camera3dBundle {
-//         transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
-//         ..default()
-//     });
-// }
-
-fn setup(
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-) {
     let debug_material = materials.add(StandardMaterial {
         base_color_texture: Some(images.add(uv_debug_texture())),
         ..default()
     });
 
-    let shapes = [
-        meshes.add(shape::Cube::default().into()),
-        meshes.add(shape::Box::default().into()),
-        meshes.add(shape::Capsule::default().into()),
-        meshes.add(shape::Torus::default().into()),
-        meshes.add(
-            shape::Icosphere::default()
-                .try_into()
-                .expect("Should be fine"),
-        ),
-        meshes.add(shape::UVSphere::default().into()),
-    ];
+    let shapes = models.into_iter().map(|m| {
+        debug!("{:?}", m);
+        meshes.add(m.bevy_mesh())
+    });
 
     let num_shapes = shapes.len();
 
@@ -211,8 +145,8 @@ fn setup(
                     -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
                     2.0,
                     0.0,
-                )
-                .with_rotation(Quat::from_rotation_x(-PI / 4.)),
+                ),
+                // .with_rotation(Quat::from_rotation_x(-PI / 4.)),
                 ..default()
             },
             Shape,
@@ -252,6 +186,143 @@ fn setup(
             Vec3::Y,
         ));
 }
+
+#[throws]
+fn main() {
+    logger::setup_logging().expect("failed to initialize logging");
+
+    // let cars = setup_textures()?;
+    // let mut render_manager = RenderManager::new(&display);
+    // for car in &cars {
+    //     render_manager.prepare_car(car, &display);
+    // }
+
+    let mut app = App::new();
+
+    app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
+        .add_plugins(WorldInspectorPlugin::new())
+        .add_plugins(LookTransformPlugin)
+        .add_plugins(UnrealCameraPlugin::default())
+        .add_systems(Startup, setup_cars)
+        .add_systems(Update, rotate);
+    // .add_system(animate_camera)
+
+    // app.register_asset_loader(CarAssetLoader)
+    //     .init_asset::<CarAsset>();
+
+    // app.configure_sets(Update, (
+    //     MainMenuSet
+    //         .run_if(in_state(MainMenu)),
+    //     GameplaySet
+    //         .run_if(in_state(InGame)),
+    //     InputSet
+    //         .in_set(GameplaySet),
+    //     EnemyAiSet
+    //         .in_set(GameplaySet)
+    //         .run_if(not(cutscene))
+    //         .after(player_movement),
+    //     AudioSet
+    //         .run_if(not(audio_muted)),
+    // ));
+
+    app.run();
+
+    //         Event::RedrawRequested(_) => {
+    //             for car in &cars {
+    //                 render_manager.draw_car(car, &mut frame, &camera);
+    //             }
+    //         }
+}
+
+/// A marker component for our shapes so we can query them separately from the ground plane
+#[derive(Component)]
+struct Shape;
+
+const X_EXTENT: f32 = 14.;
+
+// fn setup() {
+//     commands.spawn(Camera3dBundle {
+//         transform: Transform::from_xyz(0.0, 6., 12.0).looking_at(Vec3::new(0., 1., 0.), Vec3::Y),
+//         ..default()
+//     });
+// }
+
+// fn setup(
+//     mut commands: Commands,
+//     mut meshes: ResMut<Assets<Mesh>>,
+//     mut images: ResMut<Assets<Image>>,
+//     mut materials: ResMut<Assets<StandardMaterial>>,
+// ) {
+//     let debug_material = materials.add(StandardMaterial {
+//         base_color_texture: Some(images.add(uv_debug_texture())),
+//         ..default()
+//     });
+
+//     let shapes = [
+//         meshes.add(shape::Cube::default().into()),
+//         meshes.add(shape::Box::default().into()),
+//         meshes.add(shape::Capsule::default().into()),
+//         meshes.add(shape::Torus::default().into()),
+//         meshes.add(
+//             shape::Icosphere::default()
+//                 .try_into()
+//                 .expect("Should be fine"),
+//         ),
+//         meshes.add(shape::UVSphere::default().into()),
+//     ];
+
+//     let num_shapes = shapes.len();
+
+//     for (i, shape) in shapes.into_iter().enumerate() {
+//         commands.spawn((
+//             PbrBundle {
+//                 mesh: shape,
+//                 material: debug_material.clone(),
+//                 transform: Transform::from_xyz(
+//                     -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
+//                     2.0,
+//                     0.0,
+//                 )
+//                 .with_rotation(Quat::from_rotation_x(-PI / 4.)),
+//                 ..default()
+//             },
+//             Shape,
+//         ));
+//     }
+
+//     commands.spawn(PointLightBundle {
+//         point_light: PointLight {
+//             intensity: 9000.0,
+//             range: 100.,
+//             shadows_enabled: true,
+//             ..default()
+//         },
+//         transform: Transform::from_xyz(8.0, 16.0, 8.0),
+//         ..default()
+//     });
+
+//     // ground plane
+//     commands.spawn(PbrBundle {
+//         mesh: meshes.add(
+//             shape::Plane {
+//                 size: 50.,
+//                 subdivisions: 2,
+//             }
+//             .into(),
+//         ),
+//         material: materials.add(Color::SILVER.into()),
+//         ..default()
+//     });
+
+//     commands
+//         .spawn(Camera3dBundle::default())
+//         .insert(UnrealCameraBundle::new(
+//             UnrealCameraController::default(),
+//             Vec3::new(0.0, 6.0, 12.0),
+//             Vec3::new(0., 1., 0.),
+//             Vec3::Y,
+//         ));
+// }
 
 fn rotate(mut query: Query<&mut Transform, With<Shape>>, time: Res<Time>) {
     for mut transform in &mut query {

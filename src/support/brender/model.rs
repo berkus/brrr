@@ -22,7 +22,7 @@ use {
 pub struct Model {
     pub name: String,
     pub vertices: Vec<Vec3f>,
-    pub vertex_normals: Vec<Vec3f>,
+    // pub vertex_normals: Vec<Vec3f>,
     pub vertex_uvs: Vec<VertexUV>,
     pub faces: FacesChunk,
     pub material_names: Vec<String>, // vvv @todo ❌ convert to material refs
@@ -31,19 +31,31 @@ pub struct Model {
     pub pivot: Vec3f,
 }
 
+impl std::fmt::Debug for Model {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        writeln!(f, "{}: {} vertices, {} uvs, {} faces, {} material names, {} face materials, pivot {},{},{}",//{} normals,
+            self.name, self.vertices.len(), self.vertex_uvs.len(), self.faces.faces.len(),//self.vertex_normals.len(),
+            self.material_names.len(), self.face_material_indices.len(), self.pivot.x, self.pivot.y, self.pivot.z)?;
+        for name in &self.material_names {
+            writeln!(f, " MAT: {name}")?;
+        }
+        Ok(())
+    }
+}
+
 impl Model {
     fn bevy_vertices(&self) -> VertexAttributeValues {
         VertexAttributeValues::Float32x3(self.vertices.iter().map(|v| [v.x, v.y, v.z]).collect())
     }
 
-    fn bevy_vertex_normals(&self) -> VertexAttributeValues {
-        VertexAttributeValues::Float32x3(
-            self.vertex_normals
-                .iter()
-                .map(|n| [n.x, n.y, n.z])
-                .collect(),
-        )
-    }
+    // fn bevy_vertex_normals(&self) -> VertexAttributeValues {
+    //     VertexAttributeValues::Float32x3(
+    //         self.vertex_normals
+    //             .iter()
+    //             .map(|n| [n.x, n.y, n.z])
+    //             .collect(),
+    //     )
+    // }
 
     fn bevy_vertex_uvs(&self) -> VertexAttributeValues {
         VertexAttributeValues::Float32x2(self.vertex_uvs.iter().map(|t| [t.u, t.v]).collect())
@@ -73,11 +85,11 @@ impl Model {
             // vec![[0., 0., 0.], [1., 2., 1.], [2., 0., 0.]],
         );
 
-        mesh.insert_attribute(
-            Mesh::ATTRIBUTE_NORMAL,
-            self.bevy_vertex_normals(),
-            //vec![[0., 1., 0.]; 3]
-        );
+        // mesh.insert_attribute(
+        //     Mesh::ATTRIBUTE_NORMAL,
+        //     self.bevy_vertex_normals(),
+        //     //vec![[0., 1., 0.]; 3]
+        // );
         mesh.insert_attribute(
             Mesh::ATTRIBUTE_UV_0,
             self.bevy_vertex_uvs(),
@@ -95,13 +107,13 @@ impl Model {
 
         // Optionally, for more complicated geometry, instead of setting normals manually with
         // mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL,...), you can do:
-        // mesh.duplicate_vertices();
+        mesh.duplicate_vertices();
         //      It's because by default the normals are interpolated. You do have the option
         //      in WGSL to disable this using `flat` interpolation, but then all meshes rendered
         //      using that shader would loose the interpolated normals as discussed here. https://stackoverflow.com/questions/60022613/how-to-implement-flat-shading-in-opengl-without-duplicate-vertices
         //      So if you want to mix flat and smooth shaded meshes using the same shader,
         //      duplicating vertices is the only option you have.
-        // mesh.compute_flat_normals();
+        mesh.compute_flat_normals();
         // after mesh.set_indices(...).
         // Note the warnings about increasing the vertex count.
         mesh
@@ -130,12 +142,6 @@ impl FromStream for Model {
                         );
                     }
                 }
-                // Chunk::FileName { name, subtype } => {
-                //     m.name = name;
-                //     if subtype != support::MODEL_FILE_SUBTYPE {
-                //         return Err(anyhow!("Invalid mesh file subtype {}", subtype));
-                //     }
-                // }
                 Chunk::Model(model_chunk) => {
                     let mut model = Model::default();
                     model.name = model_chunk.identifier;
@@ -206,26 +212,29 @@ impl Model {
         models
     }
 
-    pub fn calc_normals(&mut self) {
-        // @todo replace with mesh.compute_flat_normals()?
-        // for face in &self.faces.faces {
-        //     let normal: [f32; 3] = calc_plane_normal(
-        //         self.vertices[face.v1 as usize].into(),
-        //         self.vertices[face.v2 as usize].into(),
-        //         self.vertices[face.v3 as usize].into(),
-        //     )
-        //     .into();
-        //     self.vertices[face.v1 as usize].normal = normal;
-        //     self.vertices[face.v2 as usize].normal = normal;
-        //     self.vertices[face.v3 as usize].normal = normal;
-        // }
-    }
+    // pub fn calc_normals(&mut self) {
+    // self.vertex_normals.clear();
+    // self.vertex_normals.reserve(self.vertices.len());
+
+    // let normals = HashSet::new();
+    // for face in &self.faces.faces {
+    //     let normal: [f32; 3] = calc_plane_normal(
+    //         self.vertices[face.v1 as usize],
+    //         self.vertices[face.v2 as usize],
+    //         self.vertices[face.v3 as usize],
+    //     )
+    //     .into();
+    //     normals.entry(face.v1).normal = normal;
+    //     normals.entry(face.v2).normal = normal;
+    //     normals.entry(face.v3).normal = normal;
+    // }
+    // }
 }
 
 /// Calculate normal from three vertices in counter-clockwise order.
-pub fn calc_plane_normal(v1: Vector3<f32>, v2: Vector3<f32>, v3: Vector3<f32>) -> Vector3<f32> {
-    (v1 - v2).cross(v2 - v3).normalize()
-}
+// pub fn calc_plane_normal(v1: Vector3<f32>, v2: Vector3<f32>, v3: Vector3<f32>) -> Vector3<f32> {
+//     (v1 - v2).cross(v2 - v3).normalize()
+// }
 
 #[cfg(test)]
 mod tests {
