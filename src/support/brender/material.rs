@@ -102,7 +102,7 @@ impl Material {
      */
     // @sa brender's `BrMaterialLoadMany()`
     #[throws(support::Error)]
-    pub fn load_from<P: AsRef<std::path::Path>>(filename: P) -> Vec<Material> {
+    pub fn load_many<P: AsRef<std::path::Path>>(filename: P) -> Vec<Material> {
         let mut file = BufReader::new(File::open(filename)?);
         let mut materials = Vec::<Material>::new();
         loop {
