@@ -18,8 +18,12 @@ use {
     carma::{
         assets::car_asset::{CarAsset, CarAssetLoader},
         support::{
-            brender::model::Model, camera::CameraState, car::Car, logger,
-            render_manager::RenderManager, visitor::visit_files,
+            brender::{material::Material, model::Model},
+            camera::CameraState,
+            car::Car,
+            logger,
+            render_manager::RenderManager,
+            visitor::visit_files,
         },
     },
     cgmath::Vector3,
@@ -59,8 +63,15 @@ fn setup_cars(
     // bevy @todo: load all textures into the texture atlas
     // TextureAtlasBuilder
 
-    let models = Model::load_many("assets/DecodedData/DATA/MODELS/NETCITYA.DAT".into())
-        .expect("Load models");
+    let mats =
+        Material::load_many("assets/DecodedData/DATA/MATERIAL/CITYA.MAT").expect("Load materials");
+    // for mat in mats {
+    //     debug!("{:?}", mat);
+    // }
+
+    // models refer to materials to load! check that
+    let models =
+        Model::load_many("assets/DecodedData/DATA/MODELS/NETCITYA.DAT").expect("Load models");
 
     // models.extend(
     //     Model::load_many("assets/DecodedData/DATA/MODELS/CITYA.DAT".into())
