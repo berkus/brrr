@@ -306,17 +306,17 @@ fn read_meshes<P: AsRef<Path>>(
 fn read_materials<P: AsRef<Path>>(
     fname: P,
     load_materials: &HashSet<String>,
-    car_materials: &mut HashMap<String, Material>,
+    _car_materials: &mut HashMap<String, Material>,
 ) -> Result<()> {
     for material in load_materials {
         let mut mat_file_name = fname.as_ref().to_path_buf();
         mat_file_name.set_file_name(material);
         let mat_file_name = path_subst(mat_file_name, "MATERIAL".into(), None)?;
         info!("### Opening material {:?}", mat_file_name);
-        let materials = Material::load_from(mat_file_name)?;
-        for mat in materials {
-            car_materials.insert(mat.name.clone(), mat); // @todo ❌ make this Handle<Texture>
-        }
+        let _materials = Material::load_many(mat_file_name)?;
+        // for mat in materials {
+        //     car_materials.insert(mat.name.clone(), mat); // @todo ❌ make this Handle<Texture>
+        // }
     }
     Ok(())
 }

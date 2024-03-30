@@ -50,7 +50,10 @@ impl FromStream for ChunkHeader {
     fn from_stream<R: ReadBytesExt>(source: &mut R) -> Self::Output {
         let chunk_type = source.read_u32::<BigEndian>()?;
         let size = source.read_u32::<BigEndian>()?;
-        debug!("Loaded chunk type {} size {}", chunk_type, size);
+        debug!(
+            "Loaded chunk type {chunk_type}/0x{:x} size {}",
+            chunk_type, size
+        );
         Self::Output { chunk_type, size }
     }
 }
@@ -283,6 +286,7 @@ impl FromStream for MaterialIndexChunk {
 }
 
 //------------------------------------------------------------------
+#[derive(Default, Debug)]
 pub struct Vec2f {
     x: f32,
     y: f32,
@@ -488,6 +492,7 @@ impl FromStream for PivotChunk {
 }
 
 //------------------------------------------------------------------
+#[derive(Default, Debug)]
 pub struct Colour {
     pub r: f32,
     pub g: f32,
@@ -508,24 +513,184 @@ impl FromStream for Colour {
     }
 }
 
+impl From<Rgb> for Colour {
+    fn from(value: Rgb) -> Self {
+        Self {
+            r: value.r as f32 / 255.0,
+            g: value.g as f32 / 255.0,
+            b: value.b as f32 / 255.0,
+        }
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct Rgb {
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+}
+
+impl FromStream for Rgb {
+    type Output = Rgb;
+
+    #[throws(support::Error)]
+    fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
+        let r = source.read_u8()?;
+        let g = source.read_u8()?;
+        let b = source.read_u8()?;
+        Self::Output { r, g, b }
+    }
+}
+
 // =================
 // Material chunks: (BrMaterialLoadMany)
 
+pub mod material_flags {
+    pub const LIGHT: u16 = 0x0001;
+    pub const PRELIT: u16 = 0x0002;
+
+    pub const SMOOTH: u16 = 0x0004;
+
+    pub const ENVIRONMENT_I: u16 = 0x0008;
+    pub const ENVIRONMENT_L: u16 = 0x0010;
+    pub const PERSPECTIVE: u16 = 0x0020;
+    pub const DECAL: u16 = 0x0040;
+
+    pub const I_FROM_U: u16 = 0x0080;
+    pub const I_FROM_V: u16 = 0x0100;
+    pub const U_FROM_I: u16 = 0x0200;
+    pub const V_FROM_I: u16 = 0x0400;
+
+    pub const ALWAYS_VISIBLE: u16 = 0x0800;
+    pub const TWO_SIDED: u16 = 0x1000;
+
+    pub const FORCE_Z_0: u16 = 0x2000;
+
+    pub const DITHER: u16 = 0x4000;
+    pub const CUSTOM: u16 = 0x8000;
+}
+
+#[derive(Default)]
+pub struct MaterialFlags(u16);
+
+impl std::fmt::Debug for MaterialFlags {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "[{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}{}]",
+            if self.0 & material_flags::LIGHT != 0 {
+                "LIGHT "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::PRELIT != 0 {
+                "PRELIT "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::SMOOTH != 0 {
+                "SMOOTH "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::ENVIRONMENT_I != 0 {
+                "ENVIRONMENT_I "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::ENVIRONMENT_L != 0 {
+                "ENVIRONMENT_L "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::PERSPECTIVE != 0 {
+                "PERSPECTIVE "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::DECAL != 0 {
+                "DECAL "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::I_FROM_U != 0 {
+                "I_FROM_U "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::I_FROM_V != 0 {
+                "I_FROM_V "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::U_FROM_I != 0 {
+                "U_FROM_I "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::V_FROM_I != 0 {
+                "V_FROM_I "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::ALWAYS_VISIBLE != 0 {
+                "ALWAYS_VISIBLE "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::TWO_SIDED != 0 {
+                "TWO_SIDED "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::FORCE_Z_0 != 0 {
+                "FORCE_Z_0 "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::DITHER != 0 {
+                "DITHER "
+            } else {
+                ""
+            },
+            if self.0 & material_flags::CUSTOM != 0 {
+                "CUSTOM "
+            } else {
+                ""
+            },
+        )
+    }
+}
+
 //------------------------------------------------------------------
+#[derive(Default, Debug)]
 pub struct MaterialChunk {
-    color: Colour,
-    opacity: u8,
-    ka: f32,
-    kd: f32,
-    ks: f32,
-    power: f32,
-    flags: u16,
-    map_transform_x: Vec2f,
-    map_transform_y: Vec2f,
-    map_transform_z: Vec2f,
-    index_base: u8,
-    index_range: u8,
-    identifier: String,
+    pub color: Colour,
+    pub opacity: u8,
+    pub ka: f32,
+    pub kd: f32,
+    pub ks: f32,
+    pub power: f32,
+    pub flags: MaterialFlags,
+    pub map_transform_x: Vec2f,
+    pub map_transform_y: Vec2f,
+    pub map_transform_z: Vec2f,
+    pub index_base: u8,
+    pub index_range: u8,
+    pub identifier: String,
+    // _COLOUR(colour), // 4 bytes in calc, 3 bytes actually written
+    // _UINT_8(opacity), // 1 byte
+    // _UFRACTION(ka), // 4 bytes
+    // _UFRACTION(kd), // 4 bytes
+    // _UFRACTION(ks), // 4 bytes
+    // _SCALAR(power), // 4 bytes
+    // _UINT_16(flags), // 2 bytes
+    // _VECTOR2(map_transform.m[0]), // 8 bytes
+    // _VECTOR2(map_transform.m[1]), // 8 bytes
+    // _VECTOR2(map_transform.m[2]), // 8 bytes
+    // _UINT_8(index_base), // 1 byte
+    // _UINT_8(index_range), // 1 byte
+    // _ASCIZ(identifier), // string length + 1 bytes
 }
 
 impl FromStream for MaterialChunk {
@@ -533,13 +698,13 @@ impl FromStream for MaterialChunk {
 
     #[throws(support::Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
-        let color = Colour::from_stream(source)?;
+        let color = Rgb::from_stream(source)?.into();
         let opacity = source.read_u8()?;
         let ka = source.read_f32::<BigEndian>()?;
         let kd = source.read_f32::<BigEndian>()?;
         let ks = source.read_f32::<BigEndian>()?;
         let power = source.read_f32::<BigEndian>()?;
-        let flags = source.read_u16::<BigEndian>()?;
+        let flags = MaterialFlags(source.read_u16::<BigEndian>()?);
         let map_transform_x = Vec2f::from_stream(source)?;
         let map_transform_y = Vec2f::from_stream(source)?;
         let map_transform_z = Vec2f::from_stream(source)?;
@@ -570,6 +735,12 @@ pub type ColorMapRefChunk = NameRefChunk;
 
 //------------------------------------------------------------------
 pub type IndexShadeRefChunk = NameRefChunk;
+
+//------------------------------------------------------------------
+pub type IndexBlendRefChunk = NameRefChunk;
+
+//------------------------------------------------------------------
+pub type ScreenDoorRefChunk = NameRefChunk;
 
 // =================
 // PixelMap chunks: (BrPixelmapLoadMany)
@@ -832,7 +1003,7 @@ impl FromStream for LightChunk {
     #[throws(support::Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let light_type = source.read_u8()?;
-        let color = Colour::from_stream(source)?;
+        let color = Rgb::from_stream(source)?.into();
         let attn_c = source.read_f32::<BigEndian>()?;
         let attn_l = source.read_f32::<BigEndian>()?;
         let attn_q = source.read_f32::<BigEndian>()?;
@@ -923,9 +1094,9 @@ pub enum Chunk {
     // Material chunks: (BrMaterialLoadMany)
     Material(MaterialChunk),
     ColorMapRef(ColorMapRefChunk),
-    IndexBlendRef(), // INDEX_BLEND_REF
+    IndexBlendRef(IndexBlendRefChunk), // INDEX_BLEND_REF
     IndexShadeRef(IndexShadeRefChunk),
-    ScreendoorRef(), // SCREENDOOR_REF
+    ScreendoorRef(ScreenDoorRefChunk), // SCREENDOOR_REF
 
     // =================
     // PixelMap chunks: (BrPixelmapLoadMany)

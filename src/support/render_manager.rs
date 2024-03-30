@@ -87,7 +87,7 @@ impl RenderManager {
                 trace!("Referred material {} index {}", material, mat);
                 if let Some(m) = car.materials.get(material) {
                     trace!("Found material {}", m);
-                    let mut name = m.pixelmap_name.clone();
+                    let mut name = m.color_map_name.clone();
                     if name.is_empty() {
                         // @fixme hack
                         name = material.to_lowercase().replace(".mat", ".pix");
