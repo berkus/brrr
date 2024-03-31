@@ -13,12 +13,13 @@ use {
     bevy::{
         prelude::*,
         render::render_resource::{Extent3d, TextureDimension, TextureFormat},
+        utils::HashMap,
     },
     bevy_inspector_egui::quick::WorldInspectorPlugin,
     carma::{
         assets::car_asset::{CarAsset, CarAssetLoader},
         support::{
-            brender::{material::Material, model::Model},
+            brender::{material::Material, model::Model, pixelmap::PixelMap, resource::LoadMany},
             camera::CameraState,
             car::Car,
             logger,
@@ -65,25 +66,56 @@ fn setup_cars(
     // bevy @todo: load all textures into the texture atlas
     // TextureAtlasBuilder
 
-    let mut mats = vec![];
+    let mut mats = HashMap::new();
 
     let _ = visit_files("assets/DecodedData/DATA/MATERIAL", &mut |dir_entry| {
         if let Ok(file_type) = dir_entry.file_type() {
             let fname = String::from(dir_entry.path().to_str().unwrap());
             if file_type.is_file() && fname.ends_with(".MAT") {
-                mats.extend(Material::load_many(fname)?);
+                for ms in Material::load_many(fname)? {
+                    mats.entry(ms.material.identifier.clone()).or_insert(ms);
+                }
             }
         }
         Ok(())
     });
 
-    mats.sort_by_key(|e| e.material.identifier.clone()); // NB
-    for mat in mats.iter() {
-        debug!("{:?}", mat.material.identifier);
+    for (name, _) in mats.iter() {
+        debug!("{:?}", name);
     }
-    debug!("{:?}", mats[0]);
-    debug!("{:?}", mats[1]);
-    debug!("Total {} materials", mats.len()); // 8014 without dedup
+    debug!("Total {} materials", mats.len()); // 8014 without dedup, 1200 after dedup
+
+    // Load material pixmaps
+    let mut pixmaps = vec![];
+
+    let _ = visit_files("assets/DecodedData/DATA/PIXELMAP", &mut |dir_entry| {
+        if let Ok(file_type) = dir_entry.file_type() {
+            let fname = String::from(dir_entry.path().to_str().unwrap());
+            if file_type.is_file() && fname.ends_with(".PIX") {
+                pixmaps.extend(PixelMap::load_many(fname)?);
+            }
+        }
+        Ok(())
+    });
+
+    let _ = visit_files(
+        "assets/DecodedData/DATA/64X48X8/PIXELMAP",
+        &mut |dir_entry| {
+            if let Ok(file_type) = dir_entry.file_type() {
+                let fname = String::from(dir_entry.path().to_str().unwrap());
+                if file_type.is_file() && fname.ends_with(".PIX") {
+                    pixmaps.extend(PixelMap::load_many(fname)?);
+                }
+            }
+            Ok(())
+        },
+    );
+
+    pixmaps.sort_by_key(|p| p.name.clone());
+    for p in pixmaps.iter() {
+        debug!("{:?}", p.name);
+    }
+    debug!("Total {} pixmaps", pixmaps.len());
 
     exit.send(AppExit);
     return;
