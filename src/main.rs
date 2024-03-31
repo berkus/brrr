@@ -49,6 +49,7 @@ use {
 // MAT
 // PAL
 // PIX
+use bevy::app::AppExit;
 
 fn setup_cars(
     mut commands: Commands,
@@ -58,16 +59,34 @@ fn setup_cars(
     mut materials: ResMut<Assets<StandardMaterial>>,
     // mut textures: ResMut<Assets<Texture>>,
     // mut texture_atlases: ResMut<Assets<TextureAtlas>>,
+    mut exit: EventWriter<AppExit>,
 ) /*-> Result<Vec<Car>>*/
 {
     // bevy @todo: load all textures into the texture atlas
     // TextureAtlasBuilder
 
-    let mats =
-        Material::load_many("assets/DecodedData/DATA/MATERIAL/CITYA.MAT").expect("Load materials");
-    // for mat in mats {
-    //     debug!("{:?}", mat);
-    // }
+    let mut mats = vec![];
+
+    let _ = visit_files("assets/DecodedData/DATA/MATERIAL", &mut |dir_entry| {
+        if let Ok(file_type) = dir_entry.file_type() {
+            let fname = String::from(dir_entry.path().to_str().unwrap());
+            if file_type.is_file() && fname.ends_with(".MAT") {
+                mats.extend(Material::load_many(fname)?);
+            }
+        }
+        Ok(())
+    });
+
+    mats.sort_by_key(|e| e.material.identifier.clone()); // NB
+    for mat in mats.iter() {
+        debug!("{:?}", mat.material.identifier);
+    }
+    debug!("{:?}", mats[0]);
+    debug!("{:?}", mats[1]);
+    debug!("Total {} materials", mats.len()); // 8014 without dedup
+
+    exit.send(AppExit);
+    return;
 
     // models refer to materials to load! check that
     let models =
