@@ -24,14 +24,14 @@ pub trait FromStream {
 }
 
 //------------------------------------------------------------------
-/// Read an array resource with a specified count from a stream.
-pub trait FromStreamExt {
-    type Output;
-    fn from_stream_ext<S: ReadBytesExt + BufRead>(
-        source: &mut S,
-        count: usize,
-    ) -> Result<Self::Output, Error>;
-}
+// Read an array resource with a specified count from a stream.
+// pub trait FromStreamExt {
+//     type Output;
+//     fn from_stream_ext<S: ReadBytesExt + BufRead>(
+//         source: &mut S,
+//         count: usize,
+//     ) -> Result<Self::Output, Error>;
+// }
 
 //------------------------------------------------------------------
 /// Read an array of resources from a specified file.
