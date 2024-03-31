@@ -327,6 +327,7 @@ impl FromStream for ModelChunk {
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let flags = source.read_u16::<BigEndian>()?;
         let identifier = read_c_string(source)?;
+        trace!(".. {identifier}");
         Self::Output { flags, identifier }
     }
 }
@@ -513,7 +514,8 @@ impl FromStream for FacesChunk {
     #[throws(support::Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let entries_count = source.read_u32::<BigEndian>()?;
-        let mut faces = Vec::<Face>::with_capacity(entries_count as usize);
+        trace!(".. {entries_count} entries");
+        let mut faces = Vec::with_capacity(entries_count as usize);
         for _ in 0..entries_count {
             let f = Face::from_stream(source)?;
             faces.push(f);

@@ -71,6 +71,9 @@ impl Model {
         )
     }
 
+    // @todo: Use face_materials_index and material_names to create multiple meshes with
+    // different materials.
+    // Simple version: duplicate all vertices always, use face_materials_index to pull in faces with the same material.
     pub fn bevy_mesh(&self) -> bevy::render::mesh::Mesh {
         use bevy::render::mesh::PrimitiveTopology;
 
@@ -146,10 +149,6 @@ impl FromStream for Model {
                     model.name = model_chunk.identifier;
                     stack.push(Box::new(model));
                 }
-                Chunk::MaterialIndex(MaterialIndexChunk { materials }) => {
-                    let model = stack.top::<Model>()?;
-                    model.material_names = materials;
-                }
                 Chunk::Vertices(VerticesChunk { vertices }) => {
                     let model = stack.top::<Model>()?;
                     model.vertices = vertices;
@@ -162,10 +161,20 @@ impl FromStream for Model {
                     let model = stack.top::<Model>()?;
                     model.faces = faces;
                 }
+                Chunk::MaterialIndex(MaterialIndexChunk { materials }) => {
+                    let model = stack.top::<Model>()?;
+                    let mut vec = vec!["".to_string()];
+                    vec.extend(materials);
+                    model.material_names = vec;
+                    // @todo prepend with a default material entry (NULL material)
+                    // stack.push(Box::new(materials_index));
+                }
                 Chunk::FaceMaterial(FaceMaterialChunk {
                     face_material_indices,
                 }) => {
+                    // let material_index = stack.pop::<MaterialIndex>()?;
                     let model = stack.top::<Model>()?;
+                    // @todo use material_index to assign materials to faces...
                     model.face_material_indices = face_material_indices;
                 }
                 Chunk::Pivot(PivotChunk { pivot }) => {
