@@ -1,16 +1,23 @@
 use {
-    super::resource::{Chunk, FileInfoChunk, FromStream, PixelMapChunk, PixelsChunk},
+    super::resource::{
+        Chunk, FileInfoChunk, FromStream, LoadMany, PixelMapChunk, PixelsChunk, ResourceTag,
+    },
     crate::support,
+    bevy::log::debug,
     byteorder::ReadBytesExt,
+    carma_derive::ResourceTag,
     culpa::{throw, throws},
     log::trace,
-    std::io::prelude::BufRead,
+    std::{
+        fs::File,
+        io::{prelude::BufRead, BufReader},
+    },
     support::brender::resource::file_type,
 };
 
 // Pixmap consists of two chunks: name and data
 // @todo ❌ use SharedData for pixmap contents to avoid copying.
-#[derive(Default, Clone)]
+#[derive(Default, Clone, ResourceTag)]
 pub struct PixelMap {
     pub name: String,
     pub width: u16,
@@ -25,11 +32,11 @@ pub struct PixelMap {
 }
 
 impl FromStream for PixelMap {
-    type Output = PixelMap;
+    type Output = Box<PixelMap>;
 
     #[throws(support::Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
-        let mut pixelmap = PixelMap::default();
+        let mut pixelmap = Box::new(PixelMap::default());
 
         // Read chunks until last chunk is encountered.
         // Certain chunks initialize certain properties.
@@ -93,6 +100,29 @@ impl FromStream for PixelMap {
         }
 
         pixelmap
+    }
+}
+
+/// Load one or more named textures from a single file
+impl LoadMany for PixelMap {
+    type Outputs = Vec<Box<PixelMap>>;
+
+    #[throws(support::Error)]
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
+        debug!("Loading many PixelMaps from {:?}", filename);
+        let mut file = BufReader::new(File::open(filename)?);
+        let mut maps = Vec::<_>::new();
+        loop {
+            let m = PixelMap::from_stream(&mut file);
+            match m {
+                Err(_) => break, // fixme: allow only Eof here
+                Ok(m) => {
+                    trace!(".. Loaded {}", m.name);
+                    maps.push(m)
+                }
+            }
+        }
+        maps
     }
 }
 

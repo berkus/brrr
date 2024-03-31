@@ -1,6 +1,6 @@
 use {
     super::resource::{
-        file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream,
+        file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream, LoadMany,
         MaterialIndexChunk, PivotChunk, ResourceStack, ResourceTag, Vec3f, VertexUV, VertexUvChunk,
         VerticesChunk,
     },
@@ -194,10 +194,12 @@ impl FromStream for Model {
 //     Ok(m)
 // }
 
-impl Model {
-    // Single model file may contain multiple models
+/// Single model file may contain multiple models.
+impl LoadMany for Model {
+    type Outputs = Vec<Box<Model>>;
+
     #[throws]
-    pub fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Box<Model>> {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
         debug!("Loading many Models from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);
         let mut models = Vec::<_>::new();
@@ -213,25 +215,27 @@ impl Model {
         }
         models
     }
-
-    // pub fn calc_normals(&mut self) {
-    // self.vertex_normals.clear();
-    // self.vertex_normals.reserve(self.vertices.len());
-
-    // let normals = HashSet::new();
-    // for face in &self.faces.faces {
-    //     let normal: [f32; 3] = calc_plane_normal(
-    //         self.vertices[face.v1 as usize],
-    //         self.vertices[face.v2 as usize],
-    //         self.vertices[face.v3 as usize],
-    //     )
-    //     .into();
-    //     normals.entry(face.v1).normal = normal;
-    //     normals.entry(face.v2).normal = normal;
-    //     normals.entry(face.v3).normal = normal;
-    // }
-    // }
 }
+
+// impl Model {
+//     pub fn calc_normals(&mut self) {
+//         self.vertex_normals.clear();
+//         self.vertex_normals.reserve(self.vertices.len());
+
+//         let normals = HashSet::new();
+//         for face in &self.faces.faces {
+//             let normal: [f32; 3] = calc_plane_normal(
+//                 self.vertices[face.v1 as usize],
+//                 self.vertices[face.v2 as usize],
+//                 self.vertices[face.v3 as usize],
+//             )
+//             .into();
+//             normals.entry(face.v1).normal = normal;
+//             normals.entry(face.v2).normal = normal;
+//             normals.entry(face.v3).normal = normal;
+//         }
+//     }
+// }
 
 /// Calculate normal from three vertices in counter-clockwise order.
 // pub fn calc_plane_normal(v1: Vector3<f32>, v2: Vector3<f32>, v3: Vector3<f32>) -> Vector3<f32> {

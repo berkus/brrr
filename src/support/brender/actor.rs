@@ -11,8 +11,9 @@ use {
         model::Model,
         resource::{
             file_type, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream, LightChunk,
-            PlaneChunk, ResourceStack, ResourceTag, TransformEulerChunk, TransformLookUpChunk,
-            TransformMatrix34Chunk, TransformQuatChunk, TransformTranslationChunk,
+            LoadMany, PlaneChunk, ResourceStack, ResourceTag, TransformEulerChunk,
+            TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
+            TransformTranslationChunk,
         },
     },
     crate::support::Error,
@@ -66,11 +67,13 @@ pub struct Actor {
     children: Vec<Box<Actor>>,
 }
 
-impl Actor {
+impl LoadMany for Actor {
+    type Outputs = Vec<Box<Actor>>;
+
     #[throws]
-    pub fn load_many<P: AsRef<std::path::Path>>(filename: P) -> Box<Actor> {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
         let mut file = BufReader::new(File::open(filename)?);
-        <Self as FromStream>::from_stream(&mut file)?
+        vec![<Self as FromStream>::from_stream(&mut file)?]
     }
 }
 

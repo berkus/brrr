@@ -33,6 +33,17 @@ pub trait FromStreamExt {
     ) -> Result<Self::Output, Error>;
 }
 
+//------------------------------------------------------------------
+/// Read an array of resources from a specified file.
+pub trait LoadMany {
+    type Outputs;
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(
+        filename: P,
+    ) -> Result<Self::Outputs, Error>;
+}
+
+//------------------------------------------------------------------
+/// Chunk type wrapper for debugging.
 struct ChunkType(u32);
 
 impl std::fmt::Display for ChunkType {

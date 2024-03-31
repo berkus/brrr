@@ -8,7 +8,9 @@
 //
 use {
     crate::support::{
-        brender::{actor::Actor, material::Material, model::Model, pixelmap::PixelMap},
+        brender::{
+            actor::Actor, material::Material, model::Model, pixelmap::PixelMap, resource::LoadMany,
+        },
         path_subst,
     },
     anyhow::{anyhow, Error, Result},
@@ -28,7 +30,7 @@ use {
 #[derive(Component)]
 pub struct Car {
     pub name: String,
-    pub actors: Actor,
+    pub actors: Vec<Box<Actor>>,
     pub meshes: HashMap<String, Model>,
     pub materials: HashMap<String, Material>,
     pub textures: HashMap<String, PixelMap>,
@@ -604,7 +606,7 @@ impl Car {
 
         Ok(Car {
             name: car_name,
-            actors: *car_actors,
+            actors: car_actors,
             meshes: car_meshes,
             materials: car_materials,
             textures: car_textures,

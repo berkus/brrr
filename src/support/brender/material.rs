@@ -8,7 +8,8 @@
 //
 use {
     super::resource::{
-        file_type, Chunk, FileInfoChunk, FromStream, MaterialChunk, ResourceStack, ResourceTag,
+        file_type, Chunk, FileInfoChunk, FromStream, LoadMany, MaterialChunk, ResourceStack,
+        ResourceTag,
     },
     crate::support::{self, Error},
     bevy::prelude::*,
@@ -198,7 +199,8 @@ impl FromStream for Material {
     }
 }
 
-impl Material {
+impl LoadMany for Material {
+    type Outputs = Vec<Box<Material>>;
     /**
      * Load multiple materials from a file.
     //
@@ -212,9 +214,7 @@ impl Material {
      */
     // @sa brender's `BrMaterialLoadMany()`
     #[throws(support::Error)]
-    pub fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(
-        filename: P,
-    ) -> Vec<Box<Material>> {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
         debug!("Loading many Materials from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);
         let mut materials = Vec::<_>::new();

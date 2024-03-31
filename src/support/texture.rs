@@ -152,21 +152,6 @@ impl PixelMap {
         Ok(())
     }
 
-    /// Load one or more named textures from a single file
-    #[throws(support::Error)]
-    pub fn load_many<P: AsRef<std::path::Path>>(fname: P) -> Vec<PixelMap> {
-        let mut file = BufReader::new(File::open(fname)?);
-        let mut pmaps = Vec::<PixelMap>::new();
-        loop {
-            let pmap = PixelMap::from_stream(&mut file);
-            match pmap {
-                Err(_) => break, // fixme: allow only Eof here
-                Ok(pmap) => pmaps.push(pmap),
-            }
-        }
-        pmaps
-    }
-
     fn dump(&self) {
         info!("Pixelmap {}", self);
     }
