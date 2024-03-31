@@ -223,7 +223,7 @@ impl Material {
             match mat {
                 Err(_) => break, // @fixme allow only Eof here
                 Ok(mat) => {
-                    debug!(".. Loaded {}", mat.material.identifier);
+                    trace!(".. Loaded {}", mat.material.identifier);
                     materials.push(mat)
                 }
             }

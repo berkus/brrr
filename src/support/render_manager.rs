@@ -28,12 +28,12 @@ pub struct RenderManager {
     program: Program,
 }
 
-fn debug_tree(name: &String, actor_name: &String, stack: &[Matrix4<f32>]) {
-    debug!("{} for {}: stack depth {}", name, actor_name, stack.len());
-    for x in stack.iter().rev() {
-        debug!(".. {:?}", x);
-    }
-}
+// fn debug_tree(name: &String, actor_name: &String, stack: &[Matrix4<f32>]) {
+//     debug!("{} for {}: stack depth {}", name, actor_name, stack.len());
+//     for x in stack.iter().rev() {
+//         debug!(".. {:?}", x);
+//     }
+// }
 
 // Load VertexBuffer
 // Load IndexBuffers for each material

@@ -33,6 +33,60 @@ pub trait FromStreamExt {
     ) -> Result<Self::Output, Error>;
 }
 
+struct ChunkType(u32);
+
+impl std::fmt::Display for ChunkType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                chunk::END => "END",
+                chunk::PIXELMAP => "PIXELMAP",
+                chunk::MATERIAL => "MATERIAL",
+                chunk::ANIM => "ANIM",
+                chunk::ANIM_TRANSFORM => "ANIM_TRANSFORM",
+                chunk::ANIM_RATE => "ANIM_RATE",
+                chunk::FILE_INFO => "FILE_INFO",
+                chunk::PIVOT => "PIVOT",
+                chunk::MATERIAL_INDEX => "MATERIAL_INDEX",
+                chunk::VERTICES => "VERTICES",
+                chunk::VERTEX_UV => "VERTEX_UV",
+                chunk::FACE_MATERIAL => "FACE_MATERIAL",
+                chunk::COLOUR_MAP_REF => "COLOUR_MAP_REF",
+                chunk::INDEX_BLEND_REF => "INDEX_BLEND_REF",
+                chunk::INDEX_SHADE_REF => "INDEX_SHADE_REF",
+                chunk::SCREENDOOR_REF => "SCREENDOOR_REF",
+                chunk::PIXELS => "PIXELS",
+                chunk::ADD_MAP => "ADD_MAP",
+                chunk::ACTOR => "ACTOR",
+                chunk::ACTOR_MODEL => "ACTOR_MODEL",
+                chunk::ACTOR_TRANSFORM => "ACTOR_TRANSFORM",
+                chunk::ACTOR_MATERIAL => "ACTOR_MATERIAL",
+                chunk::ACTOR_LIGHT => "ACTOR_LIGHT",
+                chunk::ACTOR_CAMERA => "ACTOR_CAMERA",
+                chunk::ACTOR_BOUNDS => "ACTOR_BOUNDS",
+                chunk::ACTOR_ADD_CHILD => "ACTOR_ADD_CHILD",
+                chunk::TRANSFORM_MATRIX34 => "TRANSFORM_MATRIX34",
+                chunk::TRANSFORM_MATRIX34_LP => "TRANSFORM_MATRIX34_LP",
+                chunk::TRANSFORM_QUAT => "TRANSFORM_QUAT",
+                chunk::TRANSFORM_EULER => "TRANSFORM_EULER",
+                chunk::TRANSFORM_LOOK_UP => "TRANSFORM_LOOK_UP",
+                chunk::TRANSFORM_TRANSLATION => "TRANSFORM_TRANSLATION",
+                chunk::TRANSFORM_IDENTITY => "TRANSFORM_IDENTITY",
+                chunk::BOUNDS => "BOUNDS",
+                chunk::LIGHT => "LIGHT",
+                chunk::CAMERA => "CAMERA",
+                chunk::FACES => "FACES",
+                chunk::MODEL => "MODEL",
+                chunk::ACTOR_CLIP_PLANE => "ACTOR_CLIP_PLANE",
+                chunk::PLANE => "PLANE",
+                _ => "UNKNOWN",
+            }
+        )
+    }
+}
+
 //------------------------------------------------------------------
 /// A binary resource file consisting of chunks with specific size.
 /// Reading from such file yields array of chunk results, some of
@@ -50,9 +104,11 @@ impl FromStream for ChunkHeader {
     fn from_stream<R: ReadBytesExt>(source: &mut R) -> Self::Output {
         let chunk_type = source.read_u32::<BigEndian>()?;
         let size = source.read_u32::<BigEndian>()?;
-        debug!(
-            "Loaded chunk type {chunk_type}/0x{:x} size {}",
-            chunk_type, size
+        trace!(
+            "Loaded chunk type {chunk_type}/0x{:x} {} size {}",
+            chunk_type,
+            ChunkType(chunk_type),
+            size
         );
         Self::Output { chunk_type, size }
     }

@@ -206,7 +206,7 @@ impl Model {
             match m {
                 Err(_) => break, // fixme: allow only Eof here
                 Ok(m) => {
-                    debug!(".. Loaded {}", m.name);
+                    trace!(".. Loaded {}", m.name);
                     models.push(m)
                 }
             }

@@ -3,7 +3,7 @@ use {
     crate::support,
     byteorder::ReadBytesExt,
     culpa::{throw, throws},
-    log::debug,
+    log::trace,
     std::io::prelude::BufRead,
     support::brender::resource::file_type,
 };
@@ -61,9 +61,15 @@ impl FromStream for PixelMap {
                     pixelmap.origin_x = origin_x;
                     pixelmap.origin_y = origin_y;
 
-                    debug!(
+                    trace!(
                         "Pixelmap {} (type {}, row_bytes {}, {}x{} origin {}x{})",
-                        identifier, r#type, row_bytes, width, height, origin_x, origin_y
+                        identifier,
+                        r#type,
+                        row_bytes,
+                        width,
+                        height,
+                        origin_x,
+                        origin_y
                     );
                 }
                 Chunk::Pixels(PixelsChunk {
@@ -75,9 +81,10 @@ impl FromStream for PixelMap {
                     pixelmap.unit_bytes = unit_bytes;
                     pixelmap.data = data;
 
-                    debug!(
+                    trace!(
                         "Pixelmap data in {} units, {} bytes each",
-                        units, unit_bytes
+                        units,
+                        unit_bytes
                     );
                 }
                 Chunk::AddMap() => {}

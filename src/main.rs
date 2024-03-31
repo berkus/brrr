@@ -141,7 +141,7 @@ fn setup_cars(
     });
 
     let shapes = models.into_iter().map(|m| {
-        debug!("{:?}", m);
+        trace!("{:?}", m);
         meshes.add(m.bevy_mesh())
     });
 
