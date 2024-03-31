@@ -86,13 +86,15 @@ fn setup_cars(
     debug!("Total {} materials", mats.len()); // 8014 without dedup, 1200 after dedup
 
     // Load material pixmaps
-    let mut pixmaps = vec![];
+    let mut pixmaps = HashMap::new();
 
     let _ = visit_files("assets/DecodedData/DATA/PIXELMAP", &mut |dir_entry| {
         if let Ok(file_type) = dir_entry.file_type() {
             let fname = String::from(dir_entry.path().to_str().unwrap());
             if file_type.is_file() && fname.ends_with(".PIX") {
-                pixmaps.extend(PixelMap::load_many(fname)?);
+                for pm in PixelMap::load_many(fname)? {
+                    pixmaps.entry(pm.name.clone()).or_insert(pm);
+                }
             }
         }
         Ok(())
@@ -104,30 +106,60 @@ fn setup_cars(
             if let Ok(file_type) = dir_entry.file_type() {
                 let fname = String::from(dir_entry.path().to_str().unwrap());
                 if file_type.is_file() && fname.ends_with(".PIX") {
-                    pixmaps.extend(PixelMap::load_many(fname)?);
+                    for pm in PixelMap::load_many(fname)? {
+                        pixmaps.entry(pm.name.clone()).or_insert(pm);
+                    }
                 }
             }
             Ok(())
         },
     );
 
-    pixmaps.sort_by_key(|p| p.name.clone());
-    for p in pixmaps.iter() {
-        debug!("{:?}", p.name);
+    for (name, _) in pixmaps.iter() {
+        debug!("{:?}", name);
     }
+    // 2024-03-31T20:02:21.060463Z DEBUG carma: Total 8985 pixmaps
+    // 2024-03-31T20:02:21.064849Z DEBUG carma: Total 2690 deduped pixmaps
     debug!("Total {} pixmaps", pixmaps.len());
+
+    // models refer to materials to load! check that
+
+    // Load models
+    let mut models = HashMap::new();
+
+    let _ = visit_files("assets/DecodedData/DATA/MODELS", &mut |dir_entry| {
+        if let Ok(file_type) = dir_entry.file_type() {
+            let fname = String::from(dir_entry.path().to_str().unwrap());
+            if file_type.is_file() && fname.ends_with(".DAT") {
+                for m in Model::load_many(fname)? {
+                    models
+                        .entry(m.name.clone())
+                        .and_modify(|m: &mut Box<Model>| error!("Model {} already exists", m.name))
+                        .or_insert(m);
+                }
+            }
+        }
+        Ok(())
+    });
+
+    for (_, model) in models {
+        if model.face_material_indices.len() > 0
+            && model.faces.faces.len() != model.face_material_indices.len()
+        {
+            info!(
+                "Model {} has {} faces but {} material indices",
+                model.name,
+                model.faces.faces.len(),
+                model.face_material_indices.len()
+            );
+        }
+    }
 
     exit.send(AppExit);
     return;
 
-    // models refer to materials to load! check that
-    let models =
-        Model::load_many("assets/DecodedData/DATA/MODELS/NETCITYA.DAT").expect("Load models");
-
-    // models.extend(
-    //     Model::load_many("assets/DecodedData/DATA/MODELS/CITYA.DAT".into())
-    //         .expect("Load more models"),
-    // );
+    // Each material carries a texture AND a palette used to decode it to RGB pattern.
+    // Iterate materials, use pixmap and palette ref to construct texture, then construct the material.
 
     // I'd say use the bevy_gltf crate/plugin as a reference: https://github.com/bevyengine/bevy/tree/master/crates/bevy_gltf/src
     // Specifically, you need to implement AssetLoader<MyAsset>  for MyAssetLoader and call:
@@ -191,7 +223,7 @@ fn setup_cars(
         ..default()
     });
 
-    let shapes = models.into_iter().map(|m| {
+    let shapes = models.into_iter().map(|(_, m)| {
         trace!("{:?}", m);
         meshes.add(m.bevy_mesh())
     });
