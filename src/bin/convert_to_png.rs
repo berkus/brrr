@@ -17,9 +17,10 @@ fn main() {
 
 // /// Load palette once and then apply to a bunch of pixmap data
 fn convert_all_pixmaps() -> Result<()> {
-    let palette =
-        &PixelMap::load_many(String::from("DecodedData/DATA/REG/PALETTES/DRRENDER.PAL"))?[0];
-    visit_files(Path::new("DecodedData"), &mut |dir_entry| {
+    let palette = &PixelMap::load_many(String::from(
+        "assets/DecodedData/DATA/REG/PALETTES/DRRENDER.PAL",
+    ))?[0];
+    visit_files(Path::new("assets/DecodedData"), &mut |dir_entry| {
         if let Ok(file_type) = dir_entry.file_type() {
             let fname = String::from(dir_entry.path().to_str().unwrap());
             if file_type.is_file() && fname.ends_with(".PIX") {
@@ -31,8 +32,9 @@ fn convert_all_pixmaps() -> Result<()> {
 }
 
 fn convert_game_pixmap(fname: String) -> Result<()> {
-    let palette =
-        &PixelMap::load_many(String::from("DecodedData/DATA/REG/PALETTES/DRRENDER.PAL"))?[0];
+    let palette = &PixelMap::load_many(String::from(
+        "assets/DecodedData/DATA/REG/PALETTES/DRRENDER.PAL",
+    ))?[0];
     convert_pixmap(fname, palette)
 }
 
@@ -61,7 +63,8 @@ fn convert_pixmap(fname: String, palette: &PixelMap) -> Result<()> {
 /// Uses different palette for race-selection part
 #[allow(unused)]
 fn convert_menu_pixmap(fname: String) -> Result<()> {
-    let palette =
-        &PixelMap::load_many(String::from("DecodedData/DATA/REG/PALETTES/DRACEFLC.PAL"))?[0];
+    let palette = &PixelMap::load_many(String::from(
+        "assets/DecodedData/DATA/REG/PALETTES/DRACEFLC.PAL",
+    ))?[0];
     convert_pixmap(fname, palette)
 }
