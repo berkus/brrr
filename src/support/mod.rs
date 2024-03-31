@@ -65,6 +65,8 @@ pub enum Error {
     ImageIO(#[from] image::ImageError),
     #[error("Resource type is invalid")] //, expected {expected} but got {received}")]
     InvalidResourceType, /*{ expected: u32, received: u32 }*/
+    #[error("Resource format is invalid")]
+    InvalidResourceFormat,
     #[error("Resource stack is empty")]
     EmptyStack,
 }

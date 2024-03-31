@@ -12,7 +12,7 @@ use {
     byteorder::{BigEndian, ReadBytesExt},
     carma_derive::ResourceTag,
     core::any::Any,
-    culpa::throws,
+    culpa::{throw, throws},
     std::io::BufRead,
 };
 
@@ -527,13 +527,21 @@ pub struct FaceMaterialChunk {
     pub face_material_indices: Vec<u16>,
 }
 
-impl FromStreamExt for FaceMaterialChunk {
+impl FromStream for FaceMaterialChunk {
     type Output = FaceMaterialChunk;
 
     #[throws(support::Error)]
-    fn from_stream_ext<S: ReadBytesExt + BufRead>(source: &mut S, count: usize) -> Self::Output {
-        let mut face_material_indices = Vec::with_capacity(count);
-        for _ in 0..count {
+    fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
+        let entry_count = source.read_u32::<BigEndian>()? as usize;
+        let entry_size = source.read_u32::<BigEndian>()?;
+        trace!(".. {entry_count} entries, {entry_size} bytes each");
+        assert!(entry_size == 2); // We don't support reading other variants
+        if entry_size != 2 {
+            throw!(Error::InvalidResourceFormat);
+        }
+
+        let mut face_material_indices = Vec::with_capacity(entry_count);
+        for _ in 0..entry_count {
             let index = source.read_u16::<BigEndian>()?;
             face_material_indices.push(index);
         }
@@ -1238,10 +1246,7 @@ impl FromStream for Chunk {
             }
             chunk::FACE_MATERIAL => {
                 trace!("Reading face material list...");
-                Chunk::FaceMaterial(FaceMaterialChunk::from_stream_ext(
-                    source,
-                    (header.size / 2) as usize,
-                )?)
+                Chunk::FaceMaterial(FaceMaterialChunk::from_stream(source)?)
             }
             chunk::PIVOT => {
                 trace!("Reading pivot...");
