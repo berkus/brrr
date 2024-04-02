@@ -74,6 +74,20 @@ impl Model {
     // @todo: Use face_materials_index and material_names to create multiple meshes with
     // different materials.
     // Simple version: duplicate all vertices always, use face_materials_index to pull in faces with the same material.
+    // for mat in materials {
+    //   // one mesh per material
+    //   mesh = face_materials
+    //      .enumerate()
+    //      .select(|(i, m)| m.index == mat.index)
+    //      .map(|(i, m)| faces[i])
+    //   material = materials[mat];
+    //   colormap = material.pixelmap.remap(material.index_shade_tab)
+    //   spawn(PbrBundle {
+    //      mesh: mesh,
+    //      material: StandardMaterial { material.props, texture: images.add(colormap) }
+    //   })
+    // }
+    //
     pub fn bevy_mesh(&self) -> bevy::render::mesh::Mesh {
         use bevy::render::mesh::PrimitiveTopology;
 
