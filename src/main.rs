@@ -58,7 +58,7 @@ use {
 use bevy::app::AppExit;
 
 #[throws]
-fn load_bunch<T: LoadMany<Outputs = T> + NamedResource>(
+fn load_bunch<T: LoadMany<Outputs = Box<T>> + NamedResource>(
     paths: &[&str],
     ext: &str,
     map: &mut HashMap<String, Box<T>>,
@@ -70,7 +70,9 @@ fn load_bunch<T: LoadMany<Outputs = T> + NamedResource>(
                 if file_type.is_file() && fname.ends_with(ext) {
                     for v in T::load_many(fname)? {
                         map.entry(v.resource_name())
-                            .and_modify(|m: &mut V| error!("{} already exists", m.resource_name()))
+                            .and_modify(|m: &mut Box<T>| {
+                                error!("{} already exists", m.resource_name())
+                            })
                             .or_insert(v);
                     }
                 }
