@@ -46,7 +46,7 @@ fn convert_pixmap(fname: String, palette: &PixelMap) -> Result<()> {
         // counter += 1;
         let mut pngname = PathBuf::from(&fname);
         // let name = String::from(pngname.file_name().unwrap().to_str().unwrap());
-        pngname.set_file_name(&pix.name);
+        pngname.set_file_name(&pix.identifier);
         pngname.set_extension("png");
 
         info!("Creating file {:?}", pngname);
