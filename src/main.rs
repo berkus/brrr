@@ -52,6 +52,25 @@ use {
 // PIX
 use bevy::app::AppExit;
 
+#[throws]
+fn load_bunch<K: Eq, V, T: LoadMany>(paths: &[&str], ext: &str, map: &mut HashMap<K, V>) {
+    for path in paths {
+        let _ = visit_files(path, &mut |dir_entry| {
+            if let Ok(file_type) = dir_entry.file_type() {
+                let fname = String::from(dir_entry.path().to_str().unwrap());
+                if file_type.is_file() && fname.ends_with(ext) {
+                    for v in T::load_many(fname)? {
+                        map.entry(v.name())
+                            .and_modify(|m: &mut Box<T>| error!("{} already exists", m.name()))
+                            .or_insert(v);
+                    }
+                }
+            }
+            Ok(())
+        });
+    }
+}
+
 fn setup_cars(
     mut commands: Commands,
     // asset_server: ResMut<AssetServer>,
@@ -68,17 +87,14 @@ fn setup_cars(
 
     let mut mats = HashMap::new();
 
-    let _ = visit_files("assets/DecodedData/DATA/MATERIAL", &mut |dir_entry| {
-        if let Ok(file_type) = dir_entry.file_type() {
-            let fname = String::from(dir_entry.path().to_str().unwrap());
-            if file_type.is_file() && fname.ends_with(".MAT") {
-                for ms in Material::load_many(fname)? {
-                    mats.entry(ms.material.identifier.clone()).or_insert(ms);
-                }
-            }
-        }
-        Ok(())
-    });
+    load_bunch::<Material>(
+        &[
+            "assets/DecodedData/DATA/MATERIAL",
+            "assets/DecodedData/DATA/REG/MATERIAL",
+        ],
+        ".MAT",
+        &mut mats,
+    );
 
     for (name, _) in mats.iter() {
         debug!("{:?}", name);
@@ -88,38 +104,19 @@ fn setup_cars(
     // Load material pixmaps
     let mut pixmaps = HashMap::new();
 
-    let _ = visit_files("assets/DecodedData/DATA/PIXELMAP", &mut |dir_entry| {
-        if let Ok(file_type) = dir_entry.file_type() {
-            let fname = String::from(dir_entry.path().to_str().unwrap());
-            if file_type.is_file() && fname.ends_with(".PIX") {
-                for pm in PixelMap::load_many(fname)? {
-                    pixmaps.entry(pm.name.clone()).or_insert(pm);
-                }
-            }
-        }
-        Ok(())
-    });
-
-    let _ = visit_files(
-        "assets/DecodedData/DATA/64X48X8/PIXELMAP",
-        &mut |dir_entry| {
-            if let Ok(file_type) = dir_entry.file_type() {
-                let fname = String::from(dir_entry.path().to_str().unwrap());
-                if file_type.is_file() && fname.ends_with(".PIX") {
-                    for pm in PixelMap::load_many(fname)? {
-                        pixmaps.entry(pm.name.clone()).or_insert(pm);
-                    }
-                }
-            }
-            Ok(())
-        },
+    load_bunch::<PixelMap>(
+        &[
+            "assets/DecodedData/DATA/PIXELMAP",
+            "assets/DecodedData/DATA/64X48X8/PIXELMAP",
+            "assets/DecodedData/DATA/REG/PIXELMAP",
+        ],
+        ".PIX",
+        &mut pixmaps,
     );
 
     for (name, _) in pixmaps.iter() {
         debug!("{:?}", name);
     }
-    // 2024-03-31T20:02:21.060463Z DEBUG carma: Total 8985 pixmaps
-    // 2024-03-31T20:02:21.064849Z DEBUG carma: Total 2690 deduped pixmaps
     debug!("Total {} pixmaps", pixmaps.len());
 
     // models refer to materials to load! check that
@@ -127,20 +124,7 @@ fn setup_cars(
     // Load models
     let mut models = HashMap::new();
 
-    let _ = visit_files("assets/DecodedData/DATA/MODELS", &mut |dir_entry| {
-        if let Ok(file_type) = dir_entry.file_type() {
-            let fname = String::from(dir_entry.path().to_str().unwrap());
-            if file_type.is_file() && fname.ends_with(".DAT") {
-                for m in Model::load_many(fname)? {
-                    models
-                        .entry(m.name.clone())
-                        .and_modify(|m: &mut Box<Model>| error!("Model {} already exists", m.name))
-                        .or_insert(m);
-                }
-            }
-        }
-        Ok(())
-    });
+    load_bunch::<Model>(&["assets/DecodedData/DATA/MODELS"], ".DAT", &mut models);
 
     for (_, model) in models {
         if model.face_material_indices.len() > 0
