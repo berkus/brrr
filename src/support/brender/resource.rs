@@ -35,8 +35,9 @@ pub trait FromStream {
 
 //------------------------------------------------------------------
 /// Read an array of resources from a specified file.
+/// Resources must be named to distinguish them from each other.
 pub trait LoadMany {
-    type Outputs;
+    type Outputs: NamedResource;
     fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(
         filename: P,
     ) -> Result<Vec<Self::Outputs>, Error>;
@@ -889,6 +890,7 @@ impl FromStream for PixelsChunk {
 // Actor chunks: (BrActorLoadMany)
 
 //------------------------------------------------------------------
+#[derive(Default)]
 pub struct ActorChunk {
     pub r#type: u8,       // actor_type::
     pub render_style: u8, // actor_render_style::
@@ -1374,14 +1376,30 @@ impl FromStream for Chunk {
     }
 }
 
-/*
- * Resource stack values.
- */
+/// Values on the resource stack.
 pub trait ResourceTag {
     // fn as_any(&self) -> &dyn Any;
     // fn as_any_mut(&mut self) -> &mut dyn Any;
 }
 
+/// A Carma resource that has a name
+pub trait NamedResource {
+    fn resource_name(&self) -> String;
+}
+
+impl<T: NamedResource> NamedResource for Box<T> {
+    fn resource_name(&self) -> String {
+        use std::ops::Deref;
+        self.deref().resource_name()
+    }
+}
+
+// Named resources:
+// Actor
+// Model
+// PixelMap
+// Material
+//
 // ResourceTags:
 // Actor
 // Model
@@ -1395,8 +1413,6 @@ pub trait ResourceTag {
 // pub enum ResourceTag2 {
 //     // unused
 //     ImagePlane(),
-//     PixelMap(Box<PixelMapChunk>),
-//     Material(Box<MaterialChunk>),
 //     MaterialIndex(Box<MaterialIndexChunk>),
 //     Vertices(Box<VerticesChunk>),
 //     Faces(Box<FacesChunk>),

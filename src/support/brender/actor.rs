@@ -10,9 +10,9 @@ use {
     super::{
         model::Model,
         resource::{
-            file_type, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream, LightChunk,
-            LoadMany, PlaneChunk, ResourceStack, ResourceTag, TransformEulerChunk,
-            TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
+            file_type, ActorChunk, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream,
+            LightChunk, LoadMany, NamedResource, PlaneChunk, ResourceStack, ResourceTag,
+            TransformEulerChunk, TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
             TransformTranslationChunk,
         },
     },
@@ -60,11 +60,18 @@ enum ActorData {
 
 #[derive(Default, ResourceTag)]
 pub struct Actor {
+    actor: ActorChunk,
     model: Box<Model>,
     transform: Transform,
     material: (),
     data: ActorData,
     children: Vec<Box<Actor>>,
+}
+
+impl NamedResource for Actor {
+    fn resource_name(&self) -> String {
+        self.actor.identifier.clone()
+    }
 }
 
 impl LoadMany for Actor {
@@ -102,7 +109,7 @@ impl FromStream for Actor {
 
                 Chunk::Actor(actor) => {
                     let mut act = Actor::default();
-                    // @todo Type and render_style
+                    act.actor = actor;
                     stack.push(Box::new(act));
                 }
                 Chunk::ActorModel(_model) => {

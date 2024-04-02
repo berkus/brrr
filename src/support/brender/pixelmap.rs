@@ -1,6 +1,7 @@
 use {
     super::resource::{
-        Chunk, FileInfoChunk, FromStream, LoadMany, PixelMapChunk, PixelsChunk, ResourceTag,
+        Chunk, FileInfoChunk, FromStream, LoadMany, NamedResource, PixelMapChunk, PixelsChunk,
+        ResourceTag,
     },
     crate::support,
     bevy::log::debug,
@@ -29,6 +30,12 @@ pub struct PixelMap {
     pub units: u32,
     pub unit_bytes: u32,
     pub data: Vec<u8>, // temp pub
+}
+
+impl NamedResource for PixelMap {
+    fn resource_name(&self) -> String {
+        self.identifier.clone()
+    }
 }
 
 impl FromStream for PixelMap {

@@ -8,8 +8,8 @@
 //
 use {
     super::resource::{
-        file_type, Chunk, FileInfoChunk, FromStream, LoadMany, MaterialChunk, ResourceStack,
-        ResourceTag,
+        file_type, Chunk, FileInfoChunk, FromStream, LoadMany, MaterialChunk, NamedResource,
+        ResourceStack, ResourceTag,
     },
     crate::support::{self, Error},
     bevy::prelude::*,
@@ -32,6 +32,12 @@ pub struct Material {
     pub index_shade_name: String, // Palette file used to convert u8 indexed color to RGBA
     pub index_blend_name: String,
     pub screendoor_name: String,
+}
+
+impl NamedResource for Material {
+    fn resource_name(&self) -> String {
+        self.material.identifier.clone()
+    }
 }
 
 impl std::fmt::Display for Material {

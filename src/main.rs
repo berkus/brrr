@@ -19,7 +19,12 @@ use {
     carma::{
         assets::car_asset::{CarAsset, CarAssetLoader},
         support::{
-            brender::{material::Material, model::Model, pixelmap::PixelMap, resource::LoadMany},
+            brender::{
+                material::Material,
+                model::Model,
+                pixelmap::PixelMap,
+                resource::{LoadMany, NamedResource},
+            },
             camera::CameraState,
             car::Car,
             logger,
@@ -53,15 +58,21 @@ use {
 use bevy::app::AppExit;
 
 #[throws]
-fn load_bunch<K: Eq, V, T: LoadMany>(paths: &[&str], ext: &str, map: &mut HashMap<K, V>) {
+fn load_bunch<T: LoadMany + NamedResource, K: core::hash::Hash, V>(
+    paths: &[&str],
+    ext: &str,
+    map: &mut HashMap<K, V>,
+) {
     for path in paths {
         let _ = visit_files(path, &mut |dir_entry| {
             if let Ok(file_type) = dir_entry.file_type() {
                 let fname = String::from(dir_entry.path().to_str().unwrap());
                 if file_type.is_file() && fname.ends_with(ext) {
                     for v in T::load_many(fname)? {
-                        map.entry(v.name())
-                            .and_modify(|m: &mut Box<T>| error!("{} already exists", m.name()))
+                        map.entry(v.resource_name())
+                            .and_modify(|m: &mut Box<T>| {
+                                error!("{} already exists", m.resource_name())
+                            })
                             .or_insert(v);
                     }
                 }

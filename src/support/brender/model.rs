@@ -1,8 +1,8 @@
 use {
     super::resource::{
         file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream, LoadMany,
-        MaterialIndexChunk, PivotChunk, ResourceStack, ResourceTag, Vec3f, VertexUV, VertexUvChunk,
-        VerticesChunk,
+        MaterialIndexChunk, NamedResource, PivotChunk, ResourceStack, ResourceTag, Vec3f, VertexUV,
+        VertexUvChunk, VerticesChunk,
     },
     crate::support::Error,
     bevy::{prelude::*, render::mesh::VertexAttributeValues},
@@ -28,6 +28,12 @@ pub struct Model {
     // pub materials: Vec<Material>,
     pub face_material_indices: Vec<u16>,
     pub pivot: Vec3f,
+}
+
+impl NamedResource for Model {
+    fn resource_name(&self) -> String {
+        self.identifier.clone()
+    }
 }
 
 impl std::fmt::Debug for Model {
