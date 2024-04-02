@@ -101,7 +101,9 @@ impl FromStream for Actor {
                 }
 
                 Chunk::Actor(actor) => {
-                    stack.push(Box::new(actor));
+                    let mut act = Actor::default();
+                    // @todo Type and render_style
+                    stack.push(Box::new(act));
                 }
                 Chunk::ActorModel(_model) => {
                     let actor = stack.top::<Actor>()?;

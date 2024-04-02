@@ -890,9 +890,9 @@ impl FromStream for PixelsChunk {
 
 //------------------------------------------------------------------
 pub struct ActorChunk {
-    r#type: u8,       // actor_type::
-    render_style: u8, // actor_render_style::
-    identifier: String,
+    pub r#type: u8,       // actor_type::
+    pub render_style: u8, // actor_render_style::
+    pub identifier: String,
 }
 
 impl FromStream for ActorChunk {
