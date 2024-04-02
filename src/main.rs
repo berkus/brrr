@@ -105,7 +105,8 @@ fn setup_cars(
         ],
         ".MAT",
         &mut mats,
-    );
+    )
+    .expect("Load all materials");
 
     for (name, _) in mats.iter() {
         debug!("{:?}", name);
@@ -123,7 +124,8 @@ fn setup_cars(
         ],
         ".PIX",
         &mut pixmaps,
-    );
+    )
+    .expect("Load all pixmaps");
 
     for (name, _) in pixmaps.iter() {
         debug!("{:?}", name);
@@ -135,7 +137,8 @@ fn setup_cars(
     // Load models
     let mut models = HashMap::new();
 
-    load_bunch::<Model>(&["assets/DecodedData/DATA/MODELS"], ".DAT", &mut models);
+    load_bunch::<Model>(&["assets/DecodedData/DATA/MODELS"], ".DAT", &mut models)
+        .expect("Load all models");
 
     for (_, model) in models {
         if model.face_material_indices.len() > 0
