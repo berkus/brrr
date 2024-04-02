@@ -1,6 +1,9 @@
 use {
     anyhow::Result,
-    carma::support::{brender::pixelmap::PixelMap, visitor::visit_files},
+    carma::support::{
+        brender::{pixelmap::PixelMap, resource::LoadMany},
+        visitor::visit_files,
+    },
     log::info,
     std::{
         fs::File,
