@@ -94,7 +94,9 @@ impl FromStream for PixelMap {
                         unit_bytes
                     );
                 }
-                Chunk::AddMap() => {}
+                Chunk::AddMap() => {
+                    todo!()
+                }
                 _ => unimplemented!(), // unexpected type for a pixelmap file
             }
         }
