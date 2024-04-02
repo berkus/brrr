@@ -19,7 +19,7 @@ use {
 // @todo ❌ use SharedData for pixmap contents to avoid copying.
 #[derive(Default, Clone, ResourceTag)]
 pub struct PixelMap {
-    pub name: String,
+    pub identifier: String,
     pub width: u16,
     pub height: u16,
     pub origin_x: u16,
@@ -62,7 +62,7 @@ impl FromStream for PixelMap {
                     r#type,
                     row_bytes,
                 }) => {
-                    pixelmap.name = identifier.clone();
+                    pixelmap.identifier = identifier.clone();
                     pixelmap.width = width;
                     pixelmap.height = height;
                     pixelmap.origin_x = origin_x;
@@ -117,7 +117,7 @@ impl LoadMany for PixelMap {
             match m {
                 Err(_) => break, // fixme: allow only Eof here
                 Ok(m) => {
-                    trace!(".. Loaded {}", m.name);
+                    trace!(".. Loaded {}", m.identifier);
                     maps.push(m)
                 }
             }
@@ -131,7 +131,7 @@ impl std::fmt::Display for PixelMap {
         write!(
             f,
             "{} ({}x{}, origin {}x{}) in {} units of {} bytes each",
-            self.name,
+            self.identifier,
             self.width,
             self.height,
             self.origin_x,

@@ -19,7 +19,7 @@ use {
 
 #[derive(Default, ResourceTag)]
 pub struct Model {
-    pub name: String,
+    pub identifier: String,
     pub vertices: Vec<Vec3f>,
     // pub vertex_normals: Vec<Vec3f>,
     pub vertex_uvs: Vec<VertexUV>,
@@ -33,7 +33,7 @@ pub struct Model {
 impl std::fmt::Debug for Model {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}: {} vertices, {} uvs, {} faces, {} material names, {} face materials, pivot {},{},{}",//{} normals,
-            self.name, self.vertices.len(), self.vertex_uvs.len(), self.faces.faces.len(),//self.vertex_normals.len(),
+            self.identifier, self.vertices.len(), self.vertex_uvs.len(), self.faces.faces.len(),//self.vertex_normals.len(),
             self.material_names.len(), self.face_material_indices.len(), self.pivot.x, self.pivot.y, self.pivot.z)?;
         for name in &self.material_names {
             writeln!(f, " MAT: {name}")?;
@@ -146,7 +146,7 @@ impl FromStream for Model {
                 }
                 Chunk::Model(model_chunk) => {
                     let mut model = Model::default();
-                    model.name = model_chunk.identifier;
+                    model.identifier = model_chunk.identifier;
                     stack.push(Box::new(model));
                 }
                 Chunk::Vertices(VerticesChunk { vertices }) => {
@@ -217,7 +217,7 @@ impl LoadMany for Model {
             match m {
                 Err(_) => break, // fixme: allow only Eof here
                 Ok(m) => {
-                    trace!(".. Loaded {}", m.name);
+                    trace!(".. Loaded {}", m.identifier);
                     models.push(m)
                 }
             }
@@ -267,7 +267,7 @@ mod tests {
             0x0, 0x0, 0x0, 0x0, // Chunk size
         ]);
         let m = Model::from_stream(&mut data).unwrap();
-        assert_eq!("hello", m.name);
+        assert_eq!("hello", m.identifier);
         // assert_eq!(0xbeef, m.v2);
         // assert_eq!(0xcafe, m.v3);
         // assert_eq!(0xbabe, m.flags);

@@ -298,7 +298,7 @@ fn read_meshes<P: AsRef<Path>>(
                 .unwrap(),
         )?;
         for model in meshes {
-            car_meshes.insert(model.name.clone(), *model); // @todo ❌ populate World resources
+            car_meshes.insert(model.identifier.clone(), *model); // @todo ❌ populate World resources
         }
     }
     Ok(())
@@ -600,7 +600,7 @@ impl Car {
             let pix = PixelMap::load_many(pix_file_name)?;
             for pmap in pix {
                 let pmap = pmap.remap_via_palette(palette)?;
-                car_textures.insert(pmap.name.clone(), pmap);
+                car_textures.insert(pmap.identifier.clone(), pmap);
             }
         }
 
