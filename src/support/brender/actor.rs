@@ -68,10 +68,10 @@ pub struct Actor {
 }
 
 impl LoadMany for Actor {
-    type Outputs = Vec<Box<Actor>>;
+    type Outputs = Box<Actor>;
 
     #[throws]
-    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         let mut file = BufReader::new(File::open(filename)?);
         vec![<Self as FromStream>::from_stream(&mut file)?]
     }

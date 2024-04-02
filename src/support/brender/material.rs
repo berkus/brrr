@@ -200,7 +200,7 @@ impl FromStream for Material {
 }
 
 impl LoadMany for Material {
-    type Outputs = Vec<Box<Material>>;
+    type Outputs = Box<Material>;
     /**
      * Load multiple materials from a file.
     //
@@ -214,7 +214,7 @@ impl LoadMany for Material {
      */
     // @sa brender's `BrMaterialLoadMany()`
     #[throws(support::Error)]
-    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         debug!("Loading many Materials from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);
         let mut materials = Vec::<_>::new();

@@ -39,7 +39,7 @@ pub trait LoadMany {
     type Outputs;
     fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(
         filename: P,
-    ) -> Result<Self::Outputs, Error>;
+    ) -> Result<Vec<Self::Outputs>, Error>;
 }
 
 //------------------------------------------------------------------

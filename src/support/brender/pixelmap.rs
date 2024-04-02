@@ -105,10 +105,10 @@ impl FromStream for PixelMap {
 
 /// Load one or more named textures from a single file
 impl LoadMany for PixelMap {
-    type Outputs = Vec<Box<PixelMap>>;
+    type Outputs = Box<PixelMap>;
 
     #[throws(support::Error)]
-    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         debug!("Loading many PixelMaps from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);
         let mut maps = Vec::<_>::new();

@@ -205,10 +205,10 @@ impl FromStream for Model {
 
 /// Single model file may contain multiple models.
 impl LoadMany for Model {
-    type Outputs = Vec<Box<Model>>;
+    type Outputs = Box<Model>;
 
     #[throws]
-    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Self::Outputs {
+    fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         debug!("Loading many Models from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);
         let mut models = Vec::<_>::new();
