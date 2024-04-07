@@ -174,8 +174,10 @@ impl FromStream for Material {
                     }
                 }
                 Chunk::Material(material) => {
-                    let mut mat = Material::default();
-                    mat.material = material;
+                    let mat = Material {
+                        material,
+                        ..default()
+                    };
                     stack.push(Box::new(mat));
                 }
                 Chunk::ColorMapRef(color_map) => {

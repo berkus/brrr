@@ -162,9 +162,11 @@ impl FromStream for Model {
                         });
                     }
                 }
-                Chunk::Model(model_chunk) => {
-                    let mut model = Model::default();
-                    model.identifier = model_chunk.identifier;
+                Chunk::Model(ModelChunk { identifier, .. }) => {
+                    let model = Model {
+                        identifier,
+                        ..default()
+                    };
                     stack.push(Box::new(model));
                 }
                 Chunk::Vertices(VerticesChunk { vertices }) => {
