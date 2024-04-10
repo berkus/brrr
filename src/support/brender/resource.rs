@@ -1445,16 +1445,24 @@ impl ResourceStack {
     #[throws]
     pub fn pop<T: ResourceTag + 'static>(&mut self) -> Box<T> {
         let box_ = self.stack.pop().ok_or(Error::EmptyStack)?;
-        box_.downcast::<T>().or(Err(Error::InvalidResourceType))?
+        box_.downcast::<T>().or(Err(
+            Error::InvalidResourceType, // {
+                                        //     expected: T::resource_type(),
+                                        //     received: box_.resource_type(),
+                                        // }
+        ))?
     }
 
     /// Give mutable access to the stack top.
     #[throws]
     pub fn top<T: ResourceTag + 'static>(&mut self) -> &mut T {
         let box_ = self.stack.last_mut().ok_or(Error::EmptyStack)?;
-        (*box_)
-            .downcast_mut::<T>()
-            .ok_or(Error::InvalidResourceType)?
+        (*box_).downcast_mut::<T>().ok_or(
+            Error::InvalidResourceType, // {
+                                        //     expected: T::resource_type(),
+                                        //     received: box_.resource_type(),
+                                        // }
+        )?
     }
 }
 

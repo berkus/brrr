@@ -98,10 +98,12 @@ impl FromStream for Actor {
                 Chunk::End() => break,
                 Chunk::FileInfo(FileInfoChunk { file_type, .. }) => {
                     if file_type != file_type::ACTOR {
-                        throw!(Error::InvalidResourceType {
-                            expected: file_type::ACTOR,
-                            received: file_type,
-                        });
+                        throw!(
+                            Error::InvalidResourceType // {
+                                                       //     expected: file_type::ACTOR,
+                                                       //     received: file_type,
+                                                       // }
+                        );
                     }
                 }
 

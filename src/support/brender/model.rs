@@ -156,10 +156,12 @@ impl FromStream for Model {
                 Chunk::End() => break,
                 Chunk::FileInfo(FileInfoChunk { file_type, .. }) => {
                     if file_type != file_type::MODEL {
-                        throw!(Error::InvalidResourceType {
-                            expected: file_type::MODEL,
-                            received: file_type,
-                        });
+                        throw!(
+                            Error::InvalidResourceType // {
+                                                       //     expected: file_type::MODEL,
+                                                       //     received: file_type,
+                                                       // }
+                        );
                     }
                 }
                 Chunk::Model(ModelChunk { identifier, .. }) => {
