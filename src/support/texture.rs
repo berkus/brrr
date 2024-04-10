@@ -21,13 +21,13 @@ use {
 
 @todo ❌ drop local Texture and use bevy::TextureAtlas
 */
-#[derive(Default)]
-pub struct Texture {
-    // @todo ❌ use bevy::prelude::TextureAtlas
-    pub w: u16,
-    pub h: u16,
-    pub data: Vec<u8>,
-}
+// #[derive(Default)]
+// pub struct Texture {
+//     // @todo ❌ use bevy::prelude::TextureAtlas
+//     pub w: u16,
+//     pub h: u16,
+//     pub data: Vec<u8>,
+// }
 
 /**
 * Named reference into the megatexture.
@@ -35,14 +35,14 @@ pub struct Texture {
 @todo ❌ use bevy Handle<Texture> or sth like this to get the texture out of the atlas
 We need only u and v for the texture because it's all already part of the megatexture.
 */
-pub struct TextureReference {
-    pub id: i32,
-    pub x0: f32,
-    pub y0: f32,
-    pub x1: f32,
-    pub y1: f32,
-    pub name: String,
-}
+// pub struct TextureReference {
+//     pub id: i32,
+//     pub x0: f32,
+//     pub y0: f32,
+//     pub x1: f32,
+//     pub y1: f32,
+//     pub name: String,
+// }
 
 impl PixelMap {
     /// Convert indexed-color image to RGBA using provided palette.
@@ -151,12 +151,12 @@ impl PixelMap {
 }
 
 // @todo ❌ Use bevy::Texture directly?
-impl Texture {
-    pub fn new() -> Texture {
-        Texture {
-            w: 1024,
-            h: 1024,
-            data: Vec::new(),
-        }
-    }
-}
+// impl Texture {
+//     pub fn new() -> Texture {
+//         Texture {
+//             w: 1024,
+//             h: 1024,
+//             data: Vec::new(),
+//         }
+//     }
+// }
