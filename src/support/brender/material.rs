@@ -11,7 +11,7 @@ use {
         file_type, Chunk, FileInfoChunk, FromStream, LoadMany, MaterialChunk, NamedResource,
         ResourceStack, ResourceTag,
     },
-    crate::support::{self, Error},
+    crate::support::Error,
     bevy::prelude::*,
     byteorder::ReadBytesExt,
     carma_derive::ResourceTag,
@@ -221,7 +221,7 @@ impl LoadMany for Material {
     // atelier-assets handles this scenario in a cleaner way (and we're considering a move to that)
      */
     // @sa brender's `BrMaterialLoadMany()`
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         debug!("Loading many Materials from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);

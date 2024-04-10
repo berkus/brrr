@@ -1,10 +1,12 @@
 use {
-    super::resource::{
-        Chunk, FileInfoChunk, FromStream, LoadMany, NamedResource, PixelMapChunk, PixelsChunk,
-        ResourceTag,
+    crate::support::{
+        brender::resource::{
+            file_type, Chunk, FileInfoChunk, FromStream, LoadMany, NamedResource, PixelMapChunk,
+            PixelsChunk, ResourceStack, ResourceTag,
+        },
+        Error,
     },
-    crate::support,
-    bevy::log::debug,
+    bevy::{log::debug, prelude::*},
     byteorder::ReadBytesExt,
     carma_derive::ResourceTag,
     culpa::{throw, throws},
@@ -13,7 +15,6 @@ use {
         fs::File,
         io::{prelude::BufRead, BufReader},
     },
-    support::brender::resource::file_type,
 };
 
 // Pixmap consists of two chunks: name and data
@@ -41,7 +42,7 @@ impl NamedResource for PixelMap {
 impl FromStream for PixelMap {
     type Output = Box<PixelMap>;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let mut pixelmap = Box::new(PixelMap::default());
 
@@ -116,7 +117,7 @@ impl FromStream for PixelMap {
 impl LoadMany for PixelMap {
     type Outputs = Box<PixelMap>;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         debug!("Loading many PixelMaps from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);

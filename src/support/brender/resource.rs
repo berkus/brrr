@@ -7,7 +7,7 @@
 // (See file LICENSE_1_0.txt or a copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 use {
-    crate::support::{self, brender::read_c_string, Error},
+    crate::support::{brender::read_c_string, Error},
     bevy::prelude::*,
     byteorder::{BigEndian, ReadBytesExt},
     carma_derive::ResourceTag,
@@ -112,7 +112,8 @@ struct ChunkHeader {
 
 impl FromStream for ChunkHeader {
     type Output = ChunkHeader;
-    #[throws(support::Error)]
+
+    #[throws(Error)]
     fn from_stream<R: ReadBytesExt>(source: &mut R) -> Self::Output {
         let chunk_type = source.read_u32::<BigEndian>()?;
         let size = source.read_u32::<BigEndian>()?;
@@ -134,7 +135,8 @@ pub struct NameRefChunk {
 
 impl FromStream for NameRefChunk {
     type Output = NameRefChunk;
-    #[throws(support::Error)]
+
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let identifier = read_c_string(source)?;
         trace!("... {}", identifier);
@@ -304,7 +306,8 @@ pub struct FileInfoChunk {
 
 impl FromStream for FileInfoChunk {
     type Output = FileInfoChunk;
-    #[throws(support::Error)]
+
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let file_type = source.read_u32::<BigEndian>()?;
         let version = source.read_u32::<BigEndian>()?;
@@ -324,7 +327,7 @@ pub struct ModelChunk {
 impl FromStream for ModelChunk {
     type Output = ModelChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let flags = source.read_u16::<BigEndian>()?;
         let identifier = read_c_string(source)?;
@@ -341,7 +344,7 @@ pub struct MaterialIndexChunk {
 impl FromStream for MaterialIndexChunk {
     type Output = MaterialIndexChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let entries_count = source.read_u32::<BigEndian>()? as usize;
         let mut materials = Vec::<String>::with_capacity(entries_count);
@@ -364,7 +367,7 @@ pub struct Vec2f {
 impl FromStream for Vec2f {
     type Output = Vec2f;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let x = source.read_f32::<BigEndian>()?;
         let y = source.read_f32::<BigEndian>()?;
@@ -385,7 +388,7 @@ pub struct Vec3f {
 impl FromStream for Vec3f {
     type Output = Vec3f;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let v = Vec2f::from_stream(source)?;
         let z = source.read_f32::<BigEndian>()?;
@@ -404,7 +407,7 @@ struct Vec4f {
 impl FromStream for Vec4f {
     type Output = Vec4f;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let v = Vec3f::from_stream(source)?;
         let w = source.read_f32::<BigEndian>()?;
@@ -426,7 +429,7 @@ pub struct VertexUV {
 impl FromStream for VertexUV {
     type Output = VertexUV;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let uv = Vec2f::from_stream(source)?;
         Self::Output { u: uv.x, v: uv.y }
@@ -441,7 +444,7 @@ pub struct VerticesChunk {
 impl FromStream for VerticesChunk {
     type Output = VerticesChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let entries_count = source.read_u32::<BigEndian>()?;
         let mut vertices = Vec::<Vertex>::with_capacity(entries_count as usize);
@@ -461,7 +464,7 @@ pub struct VertexUvChunk {
 impl FromStream for VertexUvChunk {
     type Output = VertexUvChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let entries_count = source.read_u32::<BigEndian>()?;
         let mut uvs = Vec::<VertexUV>::with_capacity(entries_count as usize);
@@ -486,7 +489,7 @@ pub struct Face {
 impl FromStream for Face {
     type Output = Face;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let v1 = source.read_u16::<BigEndian>()?;
         let v2 = source.read_u16::<BigEndian>()?;
@@ -512,7 +515,7 @@ pub struct FacesChunk {
 impl FromStream for FacesChunk {
     type Output = FacesChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let entries_count = source.read_u32::<BigEndian>()?;
         trace!(".. {entries_count} entries");
@@ -533,7 +536,7 @@ pub struct FaceMaterialChunk {
 impl FromStream for FaceMaterialChunk {
     type Output = FaceMaterialChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let entry_count = source.read_u32::<BigEndian>()? as usize;
         let entry_size = source.read_u32::<BigEndian>()?;
@@ -562,7 +565,7 @@ pub struct PivotChunk {
 impl FromStream for PivotChunk {
     type Output = PivotChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let pivot = Vec3f::from_stream(source)?;
         Self::Output { pivot }
@@ -580,7 +583,7 @@ pub struct Colour {
 impl FromStream for Colour {
     type Output = Colour;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let color = Vec3f::from_stream(source)?;
         Self::Output {
@@ -611,7 +614,7 @@ pub struct Rgb {
 impl FromStream for Rgb {
     type Output = Rgb;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let r = source.read_u8()?;
         let g = source.read_u8()?;
@@ -774,7 +777,7 @@ pub struct MaterialChunk {
 impl FromStream for MaterialChunk {
     type Output = MaterialChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let color = Rgb::from_stream(source)?.into();
         let opacity = source.read_u8()?;
@@ -837,7 +840,7 @@ pub struct PixelMapChunk {
 impl FromStream for PixelMapChunk {
     type Output = PixelMapChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let r#type = source.read_u8()?;
         let row_bytes = source.read_u16::<BigEndian>()?;
@@ -869,7 +872,7 @@ pub struct PixelsChunk {
 impl FromStream for PixelsChunk {
     type Output = PixelsChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let units = source.read_u32::<BigEndian>()?;
         let unit_bytes = source.read_u32::<BigEndian>()?;
@@ -900,7 +903,7 @@ pub struct ActorChunk {
 impl FromStream for ActorChunk {
     type Output = ActorChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let r#type = source.read_u8()?;
         let render_style = source.read_u8()?;
@@ -945,7 +948,7 @@ pub struct TransformMatrix34Chunk {
 impl FromStream for TransformMatrix34Chunk {
     type Output = TransformMatrix34Chunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let mut m = Vec::with_capacity(4);
         for _ in 0..4 {
@@ -967,7 +970,7 @@ pub struct TransformQuatChunk {
 impl FromStream for TransformQuatChunk {
     type Output = TransformQuatChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let q = Vec4f::from_stream(source)?;
         let t = Vec3f::from_stream(source)?;
@@ -996,7 +999,7 @@ pub struct TransformEulerChunk {
 impl FromStream for TransformEulerChunk {
     type Output = TransformEulerChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let e_order = source.read_u8()?;
         let e = Vec3f::from_stream(source)?;
@@ -1021,7 +1024,7 @@ pub struct TransformLookUpChunk {
 impl FromStream for TransformLookUpChunk {
     type Output = TransformLookUpChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let look = Vec3f::from_stream(source)?;
         let up = Vec3f::from_stream(source)?;
@@ -1038,7 +1041,7 @@ pub struct TransformTranslationChunk {
 impl FromStream for TransformTranslationChunk {
     type Output = TransformTranslationChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let t = Vec3f::from_stream(source)?;
         Self::Output { t }
@@ -1055,7 +1058,7 @@ pub struct BoundsChunk {
 impl FromStream for BoundsChunk {
     type Output = BoundsChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let min = Vec3f::from_stream(source)?;
         let max = Vec3f::from_stream(source)?;
@@ -1079,7 +1082,7 @@ pub struct LightChunk {
 impl FromStream for LightChunk {
     type Output = LightChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let light_type = source.read_u8()?;
         let color = Rgb::from_stream(source)?.into();
@@ -1116,7 +1119,7 @@ pub struct CameraChunk {
 impl FromStream for CameraChunk {
     type Output = CameraChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let camera_type = source.read_u8()?;
         let fov = source.read_f32::<BigEndian>()?;
@@ -1144,7 +1147,7 @@ pub struct PlaneChunk {
 impl FromStream for PlaneChunk {
     type Output = PlaneChunk;
 
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let equation = Vec4f::from_stream(source)?;
         Self::Output { equation }
@@ -1213,7 +1216,7 @@ impl FromStream for Chunk {
     type Output = Chunk;
 
     /// General chunk reader, no logic, just i/o.
-    #[throws(support::Error)]
+    #[throws(Error)]
     fn from_stream<R: ReadBytesExt + BufRead>(source: &mut R) -> Chunk {
         let header = ChunkHeader::from_stream(source)?;
         match header.chunk_type {
@@ -1380,6 +1383,7 @@ impl FromStream for Chunk {
 pub trait ResourceTag {
     // fn as_any(&self) -> &dyn Any;
     // fn as_any_mut(&mut self) -> &mut dyn Any;
+    // fn resource_type() -> u32;
 }
 
 /// A Carma resource that has a name
@@ -1442,7 +1446,7 @@ impl ResourceStack {
         self.stack.push(resource);
     }
 
-    #[throws]
+    #[throws(Error)]
     pub fn pop<T: ResourceTag + 'static>(&mut self) -> Box<T> {
         let box_ = self.stack.pop().ok_or(Error::EmptyStack)?;
         box_.downcast::<T>().or(Err(
@@ -1454,7 +1458,7 @@ impl ResourceStack {
     }
 
     /// Give mutable access to the stack top.
-    #[throws]
+    #[throws(Error)]
     pub fn top<T: ResourceTag + 'static>(&mut self) -> &mut T {
         let box_ = self.stack.last_mut().ok_or(Error::EmptyStack)?;
         (*box_).downcast_mut::<T>().ok_or(

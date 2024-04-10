@@ -77,7 +77,7 @@ impl NamedResource for Actor {
 impl LoadMany for Actor {
     type Outputs = Box<Actor>;
 
-    #[throws]
+    #[throws(Error)]
     fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         let mut file = BufReader::new(File::open(filename)?);
         vec![<Self as FromStream>::from_stream(&mut file)?]
@@ -87,7 +87,7 @@ impl LoadMany for Actor {
 impl FromStream for Actor {
     type Output = Box<Actor>;
 
-    #[throws]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let mut stack = ResourceStack::new();
 

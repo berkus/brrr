@@ -145,7 +145,7 @@ impl Model {
 impl FromStream for Model {
     type Output = Box<Model>;
 
-    #[throws]
+    #[throws(Error)]
     fn from_stream<S: ReadBytesExt + BufRead>(source: &mut S) -> Self::Output {
         let mut stack = ResourceStack::new();
 
@@ -229,7 +229,7 @@ impl FromStream for Model {
 impl LoadMany for Model {
     type Outputs = Box<Model>;
 
-    #[throws]
+    #[throws(Error)]
     fn load_many<P: AsRef<std::path::Path> + std::fmt::Debug>(filename: P) -> Vec<Self::Outputs> {
         debug!("Loading many Models from {:?}", filename);
         let mut file = BufReader::new(File::open(filename)?);
