@@ -153,12 +153,6 @@ fn setup_cars(
         }
     }
 
-    exit.send(AppExit);
-    return;
-
-    // Each material carries a texture AND a palette used to decode it to RGB pattern.
-    // Iterate materials, use pixmap and palette ref to construct texture, then construct the material.
-
     // I'd say use the bevy_gltf crate/plugin as a reference: https://github.com/bevyengine/bevy/tree/master/crates/bevy_gltf/src
     // Specifically, you need to implement AssetLoader<MyAsset>  for MyAssetLoader and call:
     // app.add_asset::<MyAsset>()
@@ -216,33 +210,26 @@ fn setup_cars(
     //         ..Default::default()
     //     })
     //     .with(Timer::from_seconds(0.1));
-    let debug_material = materials.add(StandardMaterial {
-        base_color_texture: Some(images.add(uv_debug_texture())),
-        ..default()
-    });
+    // let debug_material = materials.add(StandardMaterial {
+    //     base_color_texture: Some(images.add(uv_debug_texture())),
+    //     ..default()
+    // });
 
-    let shapes = models.into_iter().map(|(_, m)| {
-        trace!("{:?}", m);
-        meshes.add(m.bevy_mesh())
-    });
+    let bundles = models
+        .into_iter()
+        .map(|(_, m)| {
+            trace!("{:?}", m);
+            m.bevy_bundles()
+        })
+        .flatten();
 
     let num_shapes = shapes.len();
 
-    for (i, shape) in shapes.into_iter().enumerate() {
-        commands.spawn((
-            PbrBundle {
-                mesh: shape,
-                material: debug_material.clone(),
-                transform: Transform::from_xyz(
-                    -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
-                    2.0,
-                    0.0,
-                ),
-                // .with_rotation(Quat::from_rotation_x(-PI / 4.)),
-                ..default()
-            },
-            Shape,
-        ));
+    for (i, bundle) in bundles.into_iter().enumerate() {
+        commands.spawn(
+            bundle,
+            Shape, // @todo Split components inside bevy_bundles too? Car should know what is what
+        );
     }
 
     commands.spawn(PointLightBundle {

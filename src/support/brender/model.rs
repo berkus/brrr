@@ -1,8 +1,8 @@
 use {
     super::resource::{
         file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream, LoadMany,
-        MaterialIndexChunk, NamedResource, PivotChunk, ResourceStack, ResourceTag, Vec3f, VertexUV,
-        VertexUvChunk, VerticesChunk,
+        MaterialIndexChunk, ModelChunk, NamedResource, PivotChunk, ResourceStack, ResourceTag,
+        Vec3f, VertexUV, VertexUvChunk, VerticesChunk,
     },
     crate::support::Error,
     bevy::{prelude::*, render::mesh::VertexAttributeValues},
@@ -79,7 +79,12 @@ impl Model {
 
     // @todo: Use face_materials_index and material_names to create multiple meshes with
     // different materials.
+    //
+    // Each material carries a texture AND a palette used to decode it to RGB pattern.
+    // Iterate materials, use pixmap and palette ref to construct texture, then construct the material.
+    //
     // Simple version: duplicate all vertices always, use face_materials_index to pull in faces with the same material.
+    //
     // for mat in materials {
     //   // one mesh per material
     //   mesh = face_materials
@@ -94,51 +99,84 @@ impl Model {
     //   })
     // }
     //
-    pub fn bevy_mesh(&self) -> bevy::render::mesh::Mesh {
+    pub fn bevy_bundles(
+        &self,
+        mut meshes: ResMut<Assets<Mesh>>,
+        mut images: ResMut<Assets<Image>>,
+        mut materials: ResMut<Assets<StandardMaterial>>,
+    ) -> Vec<PbrBundle> {
         use bevy::render::mesh::PrimitiveTopology;
 
-        let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        let mut output = vec![];
 
-        // Positions of the vertices
-        // See https://bevy-cheatbook.github.io/features/coords.html
-        mesh.insert_attribute(
-            Mesh::ATTRIBUTE_POSITION,
-            self.bevy_vertices(),
-            // vec![[0., 0., 0.], [1., 2., 1.], [2., 0., 0.]],
-        );
+        for mat in self.material_names {
+            let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
 
-        // mesh.insert_attribute(
-        //     Mesh::ATTRIBUTE_NORMAL,
-        //     self.bevy_vertex_normals(),
-        //     //vec![[0., 1., 0.]; 3]
-        // );
-        mesh.insert_attribute(
-            Mesh::ATTRIBUTE_UV_0,
-            self.bevy_vertex_uvs(),
-            //vec![[0., 0.]; 3]
-        );
+            // Positions of the vertices
+            // See https://bevy-cheatbook.github.io/features/coords.html
+            mesh.insert_attribute(
+                Mesh::ATTRIBUTE_POSITION,
+                self.bevy_vertices(),
+                // vec![[0., 0., 0.], [1., 2., 1.], [2., 0., 0.]],
+            );
 
-        // A triangle using vertices 0, 2, and 1.
-        // Note: order matters. [0, 1, 2] will be flipped upside down, and you won't see it from behind!
-        mesh.set_indices(Some(
-            self.bevy_faces(),
-            // vec![0, 2, 1])
-        ));
+            // mesh.insert_attribute(
+            //     Mesh::ATTRIBUTE_NORMAL,
+            //     self.bevy_vertex_normals(),
+            //     //vec![[0., 1., 0.]; 3]
+            // );
+            mesh.insert_attribute(
+                Mesh::ATTRIBUTE_UV_0,
+                self.bevy_vertex_uvs(),
+                //vec![[0., 0.]; 3]
+            );
 
-        // @todo Materials!
+            // A triangle using vertices 0, 2, and 1.
+            // Note: order matters. [0, 1, 2] will be flipped upside down, and you won't see it from behind!
+            mesh.set_indices(Some(
+                self.bevy_faces(),
+                // vec![0, 2, 1])
+            ));
 
-        // Optionally, for more complicated geometry, instead of setting normals manually with
-        // mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL,...), you can do:
-        mesh.duplicate_vertices();
-        //      It's because by default the normals are interpolated. You do have the option
-        //      in WGSL to disable this using `flat` interpolation, but then all meshes rendered
-        //      using that shader would loose the interpolated normals as discussed here. https://stackoverflow.com/questions/60022613/how-to-implement-flat-shading-in-opengl-without-duplicate-vertices
-        //      So if you want to mix flat and smooth shaded meshes using the same shader,
-        //      duplicating vertices is the only option you have.
-        mesh.compute_flat_normals();
-        // after mesh.set_indices(...).
-        // Note the warnings about increasing the vertex count.
-        mesh
+            // @todo Materials!
+            let material = materials.lookup(mat);
+
+            // Optionally, for more complicated geometry, instead of setting normals manually with
+            // mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL,...), you can do:
+            mesh.duplicate_vertices();
+            //      It's because by default the normals are interpolated. You do have the option
+            //      in WGSL to disable this using `flat` interpolation, but then all meshes rendered
+            //      using that shader would loose the interpolated normals as discussed here. https://stackoverflow.com/questions/60022613/how-to-implement-flat-shading-in-opengl-without-duplicate-vertices
+            //      So if you want to mix flat and smooth shaded meshes using the same shader,
+            //      duplicating vertices is the only option you have.
+            mesh.compute_flat_normals();
+            // after mesh.set_indices(...).
+            // Note the warnings about increasing the vertex count.
+
+            let mesh = meshes.add(mesh); // Handle<Mesh>
+
+            let material = materials.add(StandardMaterial {
+                base_color_texture: Some(
+                    images.add(material.color_map.remapped(material.index_shade_tab)),
+                ),
+                // @todo: also convert props from `material`
+                ..default()
+            });
+
+            let bundle = PbrBundle {
+                mesh,
+                material,
+                // transform: Transform::from_xyz(
+                //     -X_EXTENT / 2. + i as f32 / (num_shapes - 1) as f32 * X_EXTENT,
+                //     2.0,
+                //     0.0,
+                // ),
+                // .with_rotation(Quat::from_rotation_x(-PI / 4.)),
+                ..default()
+            };
+            output.push(bundle);
+        }
+        output
     }
 }
 
