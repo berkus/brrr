@@ -63,6 +63,8 @@ pub enum Error {
     FromUtf8(#[from] std::string::FromUtf8Error),
     #[error("image i/o error {0:?}")]
     ImageIO(#[from] image::ImageError),
+    #[error("Resource file type is invalid, expected {expected} but got {received}")]
+    InvalidFileType { expected: u32, received: u32 },
     #[error("Resource type is invalid")] //, expected {expected} but got {received}")]
     InvalidResourceType, /*{ expected: u32, received: u32 }*/
     #[error("Resource format is invalid")]
