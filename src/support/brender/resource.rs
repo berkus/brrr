@@ -923,24 +923,6 @@ pub type ActorModelChunk = NameRefChunk;
 pub type ActorMaterialChunk = NameRefChunk;
 
 //------------------------------------------------------------------
-pub struct ActorTransformActionChunk {} // empty, simply attach transform on top of stack to the actor
-
-//------------------------------------------------------------------
-pub struct ActorLightActionChunk {} // empty, simply attach light on top of stack to the actor
-
-//------------------------------------------------------------------
-pub struct ActorCameraActionChunk {} // empty, simply attach camera on top of stack to the actor
-
-//------------------------------------------------------------------
-pub struct ActorBoundsActionChunk {} // empty, simply attach bounds on top of stack to the actor
-
-//------------------------------------------------------------------
-pub struct ActorClipPlaneActionChunk {} // empty, simply attach clip plane on top of stack to the actor
-
-//------------------------------------------------------------------
-pub struct ActorAddChildActionChunk {} // empty, simply attach actor on top of stack to the actor
-
-//------------------------------------------------------------------
 pub struct TransformMatrix34Chunk {
     m: Vec<Vec3f>, // 4-element vector of Vec3f
 }
@@ -1190,13 +1172,13 @@ pub enum Chunk {
     // Actor chunks: (BrActorLoadMany)
     Actor(ActorChunk),
     ActorModel(ActorModelChunk),
-    ActorTransform(ActorTransformActionChunk),
     ActorMaterial(ActorMaterialChunk),
-    ActorLight(ActorLightActionChunk),
-    ActorCamera(ActorCameraActionChunk),
-    ActorBounds(ActorBoundsActionChunk),
-    ActorClipPlane(ActorClipPlaneActionChunk),
-    ActorAddChild(ActorAddChildActionChunk),
+    ActorTransform(), // empty, simply attach transform on top of stack to the actor
+    ActorLight(),     // empty, simply attach light on top of stack to the actor
+    ActorCamera(),    // empty, simply attach camera on top of stack to the actor
+    ActorBounds(),    // empty, simply attach bounds on top of stack to the actor
+    ActorClipPlane(), // empty, simply attach clip plane on top of stack to the actor
+    ActorAddChild(),  // empty, simply attach actor on top of stack to the actor
 
     TransformMatrix34(TransformMatrix34Chunk),
     TransformMatrix34LP(TransformMatrix34Chunk),
@@ -1301,7 +1283,7 @@ impl FromStream for Chunk {
             }
             chunk::ACTOR_TRANSFORM => {
                 trace!("Attaching actor transform...");
-                Chunk::ActorTransform(ActorTransformActionChunk {})
+                Chunk::ActorTransform()
             }
             chunk::ACTOR_MATERIAL => {
                 trace!("Reading actor material ref...");
@@ -1309,23 +1291,23 @@ impl FromStream for Chunk {
             }
             chunk::ACTOR_LIGHT => {
                 trace!("Attaching actor light...");
-                Chunk::ActorLight(ActorLightActionChunk {})
+                Chunk::ActorLight()
             }
             chunk::ACTOR_CAMERA => {
                 trace!("Attaching actor camera...");
-                Chunk::ActorCamera(ActorCameraActionChunk {})
+                Chunk::ActorCamera()
             }
             chunk::ACTOR_BOUNDS => {
                 trace!("Attaching actor bounds...");
-                Chunk::ActorBounds(ActorBoundsActionChunk {})
+                Chunk::ActorBounds()
             }
             chunk::ACTOR_CLIP_PLANE => {
                 trace!("Attaching actor clip plane...");
-                Chunk::ActorClipPlane(ActorClipPlaneActionChunk {})
+                Chunk::ActorClipPlane()
             }
             chunk::ACTOR_ADD_CHILD => {
                 trace!("Attaching sub-actor to actor...");
-                Chunk::ActorAddChild(ActorAddChildActionChunk {})
+                Chunk::ActorAddChild()
             }
 
             chunk::TRANSFORM_MATRIX34 => {

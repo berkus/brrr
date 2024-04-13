@@ -117,7 +117,7 @@ impl FromStream for Actor {
                     // @todo ❌ Use [Direct ECS World Access](https://bevy-cheatbook.github.io/programming/world.html) here.
                     actor.model = Box::new(Model::default()); //Models::find(model.identifier); // World::query<Model>?
                 }
-                Chunk::ActorTransform(_) => {
+                Chunk::ActorTransform() => {
                     // We should just pop transform and attach it to the actor on stack
                     let transform = stack.pop::<Transform>()?;
                     let actor = stack.top::<Actor>()?;
@@ -128,31 +128,31 @@ impl FromStream for Actor {
                     // @todo ❌ Use [Direct ECS World Access](https://bevy-cheatbook.github.io/programming/world.html) here.
                     actor.material = (); // Materials::find(material.identifier); // World::query<Material>?
                 }
-                Chunk::ActorLight(_) => {
+                Chunk::ActorLight() => {
                     // We should just pop light and attach it to the actor on stack
                     let light = stack.pop::<LightChunk>()?;
                     let actor = stack.top::<Actor>()?;
                     actor.data = ActorData::Light(light);
                 }
-                Chunk::ActorCamera(_) => {
+                Chunk::ActorCamera() => {
                     // We should just pop camera and attach it to the actor on stack
                     let camera = stack.pop::<CameraChunk>()?;
                     let actor = stack.top::<Actor>()?;
                     actor.data = ActorData::Camera(camera);
                 }
-                Chunk::ActorBounds(_) => {
+                Chunk::ActorBounds() => {
                     // We should just pop bounds and attach it to the actor on stack
                     let bounds = stack.pop::<BoundsChunk>()?;
                     let actor = stack.top::<Actor>()?;
                     actor.data = ActorData::Bounds(bounds);
                 }
-                Chunk::ActorClipPlane(_) => {
+                Chunk::ActorClipPlane() => {
                     // We should just pop clip plane and attach it to the actor on stack
                     let plane = stack.pop::<PlaneChunk>()?;
                     let actor = stack.top::<Actor>()?;
                     actor.data = ActorData::ClipPlane(plane);
                 }
-                Chunk::ActorAddChild(_) => {
+                Chunk::ActorAddChild() => {
                     // @todo We should just pop actor and attach it to the actor on stack
                     let child = stack.pop::<Actor>()?;
                     let actor = stack.top::<Actor>()?;
