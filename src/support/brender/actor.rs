@@ -27,16 +27,6 @@ use {
     },
 };
 
-// Typical actor tree:
-// Root
-// +--Actor(NAME.ACT)
-//    +--Transform()
-//    +--MeshfileRef
-//    +--Actor(SUBACT.ACT)
-//       +--Transform()
-//       +--MeshfileRef
-//
-
 #[derive(Default, ResourceTag)]
 enum Transform {
     #[default]
@@ -62,9 +52,9 @@ enum ActorData {
 #[derive(Default, ResourceTag)]
 pub struct Actor {
     actor: ActorChunk,
-    model: Box<Model>,
+    model_name: String,
     transform: Transform,
-    material: (),
+    material_name: String,
     data: ActorData,
     children: Vec<Box<Actor>>,
 }
@@ -73,6 +63,10 @@ impl NamedResource for Actor {
     fn resource_name(&self) -> String {
         self.actor.identifier.clone()
     }
+}
+
+impl Debug for Actor {
+    fn fmt() {}
 }
 
 impl LoadMany for Actor {
@@ -110,10 +104,11 @@ impl FromStream for Actor {
                     let act = Actor { actor, ..default() };
                     stack.push(Box::new(act));
                 }
-                Chunk::ActorModel(_model) => {
+                Chunk::ActorModel(model) => {
                     let actor = stack.top::<Actor>()?;
-                    // @todo ❌ Use [Direct ECS World Access](https://bevy-cheatbook.github.io/programming/world.html) here.
-                    actor.model = Box::new(Model::default()); //Models::find(model.identifier); // World::query<Model>?
+                    // todo! ❌ Use [Direct ECS World Access](https://bevy-cheatbook.github.io/programming/world.html) here.
+                    // todo! ❌ not here, but in BRender to Bevy converter, probably an impl From<Actor> for SomeBevyEntity
+                    actor.model_name = model.identifier; //Models::find(model.identifier); // World::query<Model>?
                 }
                 Chunk::ActorTransform() => {
                     // We should just pop transform and attach it to the actor on stack
@@ -121,10 +116,10 @@ impl FromStream for Actor {
                     let actor = stack.top::<Actor>()?;
                     actor.transform = *transform;
                 }
-                Chunk::ActorMaterial(_material) => {
+                Chunk::ActorMaterial(material) => {
                     let actor = stack.top::<Actor>()?;
                     // @todo ❌ Use [Direct ECS World Access](https://bevy-cheatbook.github.io/programming/world.html) here.
-                    actor.material = (); // Materials::find(material.identifier); // World::query<Material>?
+                    actor.material_name = material.identifier; // Materials::find(material.identifier); // World::query<Material>?
                 }
                 Chunk::ActorLight() => {
                     // We should just pop light and attach it to the actor on stack
