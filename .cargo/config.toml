@@ -1,7 +1,4 @@
 # From https://github.com/bevyengine/bevy/blob/main/.cargo/config_fast_builds.toml
+# Linker is used from the system, with -ld_new option to run the apple optimized linker.
 [target.aarch64-apple-darwin]
-rustflags = [
-  "-Clink-arg=-fuse-ld=/opt/homebrew/opt/llvm/bin/ld64.lld",
-  "-Zshare-generics=y",
-  "-Zthreads=0",
-]
+rustflags = ["-Zshare-generics=y", "-Zthreads=0"]
