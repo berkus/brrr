@@ -11,7 +11,7 @@
 use {
     anyhow::Result,
     cgmath::Vector3,
-    glium::implement_vertex,
+    // glium::implement_vertex,
     std::{
         ops::Sub,
         path::{Path, PathBuf},
@@ -37,7 +37,7 @@ pub struct Vertex {
     pub tex_coords: [f32; 2], // u,v
 }
 
-implement_vertex!(Vertex, position, normal, tex_coords); // @fixme ❌ glium-specific - use bevy_render
+// implement_vertex!(Vertex, position, normal, tex_coords); // @fixme ❌ glium-specific - use bevy_render
 
 // This is used only for vector math, using positions
 // Not a general implementation - @todo replace with sub fun
@@ -71,6 +71,10 @@ pub enum Error {
     InvalidResourceFormat,
     #[error("Resource stack is empty")]
     EmptyStack,
+    #[error("Material {mat_name} not found in index")]
+    MissingMaterial { mat_name: String },
+    #[error("PixelMap {pm_name} not found in index")]
+    MissingPixelMap { pm_name: String },
 }
 
 pub enum Action {

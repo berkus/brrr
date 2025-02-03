@@ -1,4 +1,5 @@
 use {
+    super::resource::pixelmap_type,
     crate::support::{
         brender::resource::{
             file_type, Chunk, FileInfoChunk, FromStream, LoadMany, NamedResource, PixelMapChunk,
@@ -6,7 +7,15 @@ use {
         },
         Error,
     },
-    bevy::{log::debug, prelude::*},
+    bevy::{
+        log::debug,
+        prelude::*,
+        render::{
+            render_asset::RenderAssetUsages,
+            render_resource::{Extent3d, TextureDimension, TextureFormat},
+        },
+        utils::HashMap,
+    },
     byteorder::ReadBytesExt,
     carma_derive::ResourceTag,
     culpa::{throw, throws},
@@ -39,6 +48,22 @@ impl NamedResource for PixelMap {
     }
 }
 
+impl From<PixelMap> for bevy::prelude::Image {
+    fn from(value: PixelMap) -> Self {
+        Self::new(
+            Extent3d {
+                width: value.width.into(),
+                height: value.height.into(),
+                depth_or_array_layers: 1,
+            },
+            TextureDimension::D2,
+            value.data,
+            PixelMapType(value.r#type).into(),
+            RenderAssetUsages::default(),
+        )
+    }
+}
+
 impl FromStream for PixelMap {
     type Output = Box<PixelMap>;
 
@@ -53,12 +78,10 @@ impl FromStream for PixelMap {
                 Chunk::End() => break,
                 Chunk::FileInfo(FileInfoChunk { file_type, .. }) => {
                     if file_type != file_type::PIXELMAP {
-                        throw!(
-                            Error::InvalidResourceType // {
-                                                       //     expected: file_type::PIXELMAP,
-                                                       //     received: file_type,
-                                                       // }
-                        );
+                        throw!(Error::InvalidFileType {
+                            expected: file_type::PIXELMAP,
+                            received: file_type,
+                        });
                     }
                 }
                 Chunk::PixelMap(PixelMapChunk {
@@ -176,3 +199,82 @@ impl std::fmt::Display for PixelMap {
 //         }
 //     }
 // }
+
+struct PixelMapType(u8);
+
+impl From<PixelMapType> for TextureFormat {
+    fn from(value: PixelMapType) -> Self {
+        match value.0 {
+            pixelmap_type::INDEX_1 => unimplemented!(),
+            pixelmap_type::INDEX_2 => unimplemented!(),
+            pixelmap_type::INDEX_4 => unimplemented!(),
+            pixelmap_type::INDEX_8 => unimplemented!(),
+            pixelmap_type::RGB_555 => unimplemented!(),
+            pixelmap_type::RGB_565 => unimplemented!(),
+            pixelmap_type::RGB_888 => unimplemented!(),
+            pixelmap_type::RGBX_888 => unimplemented!(),
+            pixelmap_type::RGBA_888 => TextureFormat::Rgba8Uint,
+            pixelmap_type::YUYV_8888 => unimplemented!(),
+            pixelmap_type::YUV_888 => unimplemented!(),
+            pixelmap_type::DEPTH_16 => TextureFormat::Depth16Unorm,
+            pixelmap_type::DEPTH_32 => TextureFormat::Depth32Float,
+            pixelmap_type::ALPHA_8 => unimplemented!(),
+            pixelmap_type::INDEXA_88 => unimplemented!(),
+            _ => unimplemented!(),
+        }
+    }
+}
+
+/// Convert indexed-color image to RGBA using provided palette.
+///
+/// `Palette = shade tab` in BRender parlance.
+#[throws(Error)]
+pub fn remap_via_palette(
+    color_map_name: &str,
+    index_shade_name: &str,
+    imgs: &HashMap<String, Box<PixelMap>>,
+) -> PixelMap {
+    let Some(color_map) = imgs.get(color_map_name.into()) else {
+        throw!(Error::MissingPixelMap {
+            pm_name: color_map_name.into()
+        })
+    };
+    let Some(palette) = imgs.get(index_shade_name.into()) else {
+        throw!(Error::MissingPixelMap {
+            pm_name: index_shade_name.into()
+        })
+    };
+    let mut output = PixelMap::default();
+    output.unit_bytes = 4;
+    output.r#type = pixelmap_type::RGBA_888;
+    output.data = Vec::<_>::with_capacity(color_map.data.len() * 4);
+
+    for i in 0..color_map.units {
+        // @fixme use color index 0 as transparency
+        if color_map.data[i as usize] == 0 {
+            output.data.push(0); // R
+            output.data.push(0); // G
+            output.data.push(0); // B
+            output.data.push(255); // A = transparent
+        } else {
+            output.data.push(
+                palette.data[(color_map.data[i as usize] as u32 * palette.unit_bytes + 1) as usize],
+            ); // R
+            output.data.push(
+                palette.data[(color_map.data[i as usize] as u32 * palette.unit_bytes + 2) as usize],
+            ); // G
+            output.data.push(
+                palette.data[(color_map.data[i as usize] as u32 * palette.unit_bytes + 3) as usize],
+            ); // B
+            output.data.push(
+                255 - palette.data
+                    [(color_map.data[i as usize] as u32 * palette.unit_bytes/* + 0*/) as usize],
+            ); // A
+            if color_map.identifier == "BGLSPIKE.PIX" {
+                trace!("spike alpha {}", output.data.last().unwrap());
+            }
+        }
+    }
+
+    output
+}

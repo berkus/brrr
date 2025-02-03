@@ -591,16 +591,16 @@ impl Car {
         let load_pixmaps: HashSet<_> = load_pixmaps.iter().collect();
         debug!("Pixmaps to load: {:?}", load_pixmaps);
 
-        let mut car_textures = HashMap::<String, PixelMap>::new();
+        let car_textures = HashMap::<String, PixelMap>::new();
         for pixmap in load_pixmaps {
             let mut pix_file_name = fname.as_ref().to_path_buf();
             pix_file_name.set_file_name(pixmap);
             let pix_file_name = path_subst(pix_file_name, "PIXELMAP".into(), None)?;
             info!("### Opening pixelmap {:?}", pix_file_name);
             let pix = PixelMap::load_many(pix_file_name)?;
-            for pmap in pix {
-                let pmap = pmap.remap_via_palette(palette)?;
-                car_textures.insert(pmap.identifier.clone(), pmap);
+            for _pmap in pix {
+                // let pmap = pixelmap::remap_via_palette(pmap, palette)?;
+                // car_textures.insert(pmap.identifier.clone(), pmap);
             }
         }
 

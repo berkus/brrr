@@ -1,11 +1,22 @@
 use {
-    super::resource::{
-        file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream, LoadMany,
-        MaterialIndexChunk, ModelChunk, NamedResource, PivotChunk, ResourceStack, ResourceTag,
-        Vec3f, VertexUV, VertexUvChunk, VerticesChunk,
+    super::pixelmap::PixelMap,
+    crate::support::{
+        brender::{
+            material::Material,
+            pixelmap,
+            resource::{
+                file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream,
+                LoadMany, MaterialIndexChunk, ModelChunk, NamedResource, PivotChunk, ResourceStack,
+                ResourceTag, Vec3f, VertexUV, VertexUvChunk, VerticesChunk,
+            },
+        },
+        Error,
     },
-    crate::support::Error,
-    bevy::{prelude::*, render::mesh::VertexAttributeValues},
+    bevy::{
+        prelude::*,
+        render::{mesh::VertexAttributeValues, render_asset::RenderAssetUsages},
+        utils::HashMap,
+    },
     byteorder::ReadBytesExt,
     carma_derive::ResourceTag,
     culpa::{throw, throws},
@@ -99,18 +110,24 @@ impl Model {
     //   })
     // }
     //
+    #[throws]
     pub fn bevy_bundles(
         &self,
         mut meshes: ResMut<Assets<Mesh>>,
         mut images: ResMut<Assets<Image>>,
         mut materials: ResMut<Assets<StandardMaterial>>,
+        mats: &HashMap<String, Box<Material>>,
+        imgs: &HashMap<String, Box<PixelMap>>,
     ) -> Vec<PbrBundle> {
         use bevy::render::mesh::PrimitiveTopology;
 
         let mut output = vec![];
 
-        for mat in self.material_names {
-            let mut mesh = Mesh::new(PrimitiveTopology::TriangleList);
+        for mat in &self.material_names {
+            let mut mesh = Mesh::new(
+                PrimitiveTopology::TriangleList,
+                RenderAssetUsages::RENDER_WORLD,
+            );
 
             // Positions of the vertices
             // See https://bevy-cheatbook.github.io/features/coords.html
@@ -133,13 +150,10 @@ impl Model {
 
             // A triangle using vertices 0, 2, and 1.
             // Note: order matters. [0, 1, 2] will be flipped upside down, and you won't see it from behind!
-            mesh.set_indices(Some(
+            mesh.insert_indices(
                 self.bevy_faces(),
                 // vec![0, 2, 1])
-            ));
-
-            // @todo Materials!
-            let material = materials.lookup(mat);
+            );
 
             // Optionally, for more complicated geometry, instead of setting normals manually with
             // mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL,...), you can do:
@@ -155,10 +169,19 @@ impl Model {
 
             let mesh = meshes.add(mesh); // Handle<Mesh>
 
+            // @todo Materials!
+            let material = mats.get(mat).ok_or_else(|| Error::MissingMaterial {
+                mat_name: mat.into(),
+            })?;
+
+            let color_texture = pixelmap::remap_via_palette(
+                &material.color_map_name,
+                &material.index_shade_name,
+                imgs,
+            )?;
+
             let material = materials.add(StandardMaterial {
-                base_color_texture: Some(
-                    images.add(material.color_map.remapped(material.index_shade_tab)),
-                ),
+                base_color_texture: Some(images.add(color_texture)),
                 // @todo: also convert props from `material`
                 ..default()
             });
@@ -194,12 +217,10 @@ impl FromStream for Model {
                 Chunk::End() => break,
                 Chunk::FileInfo(FileInfoChunk { file_type, .. }) => {
                     if file_type != file_type::MODEL {
-                        throw!(
-                            Error::InvalidResourceType // {
-                                                       //     expected: file_type::MODEL,
-                                                       //     received: file_type,
-                                                       // }
-                        );
+                        throw!(Error::InvalidFileType {
+                            expected: file_type::MODEL,
+                            received: file_type,
+                        });
                     }
                 }
                 Chunk::Model(ModelChunk { identifier, .. }) => {

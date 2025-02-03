@@ -7,14 +7,11 @@
 // (See file LICENSE_1_0.txt or a copy at http://www.boost.org/LICENSE_1_0.txt)
 //
 use {
-    super::{
-        model::Model,
-        resource::{
-            file_type, ActorChunk, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream,
-            LightChunk, LoadMany, NamedResource, PlaneChunk, ResourceStack, ResourceTag,
-            TransformEulerChunk, TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
-            TransformTranslationChunk,
-        },
+    super::resource::{
+        file_type, ActorChunk, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream,
+        LightChunk, LoadMany, NamedResource, PlaneChunk, ResourceStack, ResourceTag,
+        TransformEulerChunk, TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
+        TransformTranslationChunk,
     },
     crate::support::Error,
     bevy::prelude::*,
@@ -22,6 +19,7 @@ use {
     carma_derive::ResourceTag,
     culpa::{throw, throws},
     std::{
+        fmt::Debug,
         fs::File,
         io::{BufRead, BufReader},
     },
@@ -66,7 +64,9 @@ impl NamedResource for Actor {
 }
 
 impl Debug for Actor {
-    fn fmt() {}
+    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
 }
 
 impl LoadMany for Actor {

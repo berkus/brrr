@@ -12,10 +12,13 @@ use {
     anyhow::{anyhow, Context, Error, Result},
     bevy::{
         prelude::*,
-        render::render_resource::{Extent3d, TextureDimension, TextureFormat},
+        render::{
+            render_asset::RenderAssetUsages,
+            render_resource::{Extent3d, TextureDimension, TextureFormat},
+        },
         utils::HashMap,
     },
-    bevy_inspector_egui::quick::WorldInspectorPlugin,
+    // bevy_inspector_egui::quick::WorldInspectorPlugin,
     carma::{
         assets::car_asset::{CarAsset, CarAssetLoader},
         support::{
@@ -28,19 +31,12 @@ use {
             camera::CameraState,
             car::Car,
             logger,
-            render_manager::RenderManager,
+            // render_manager::RenderManager,
             visitor::visit_files,
         },
     },
     cgmath::Vector3,
     culpa::throws,
-    glium::{
-        glutin::{
-            event::{Event, WindowEvent},
-            event_loop::ControlFlow,
-        },
-        Surface,
-    },
     log::info,
     smooth_bevy_cameras::{
         controllers::unreal::{UnrealCameraBundle, UnrealCameraController, UnrealCameraPlugin},
@@ -215,21 +211,19 @@ fn setup_cars(
     //     ..default()
     // });
 
-    let bundles = models
+    let bundles: Result<Vec<_>, _> = models
         .into_iter()
         .map(|(_, m)| {
             trace!("{:?}", m);
-            m.bevy_bundles()
+            m.bevy_bundles(&meshes, &images, &materials, &mats, &pixmaps)
         })
-        .flatten();
+        .collect();
 
-    let num_shapes = shapes.len();
+    // let num_shapes = bundles.len();
 
-    for (i, bundle) in bundles.into_iter().enumerate() {
-        commands.spawn(
-            bundle,
-            Shape, // @todo Split components inside bevy_bundles too? Car should know what is what
-        );
+    //Shape, // @todo Split components inside bevy_bundles too? Car should know what is what
+    for (i, bundle) in bundles.unwrap().into_iter().flatten().enumerate() {
+        commands.spawn(bundle);
     }
 
     commands.spawn(PointLightBundle {
@@ -244,17 +238,17 @@ fn setup_cars(
     });
 
     // ground plane
-    commands.spawn(PbrBundle {
-        mesh: meshes.add(
-            shape::Plane {
-                size: 50.,
-                subdivisions: 2,
-            }
-            .into(),
-        ),
-        material: materials.add(Color::SILVER.into()),
-        ..default()
-    });
+    // commands.spawn(PbrBundle {
+    //     mesh: meshes.add(
+    //         shape::Plane {
+    //             size: 50.,
+    //             subdivisions: 2,
+    //         }
+    //         .into(),
+    //     ),
+    //     material: materials.add(Color::SILVER.into()),
+    //     ..default()
+    // });
 
     commands
         .spawn(Camera3dBundle::default())
@@ -279,7 +273,7 @@ fn main() {
     let mut app = App::new();
 
     app.add_plugins(DefaultPlugins.set(ImagePlugin::default_nearest()))
-        .add_plugins(WorldInspectorPlugin::new())
+        // .add_plugins(WorldInspectorPlugin::new())
         .add_plugins(LookTransformPlugin)
         .add_plugins(UnrealCameraPlugin::default())
         .add_systems(Startup, setup_cars)
@@ -434,5 +428,6 @@ fn uv_debug_texture() -> Image {
         TextureDimension::D2,
         &texture_data,
         TextureFormat::Rgba8UnormSrgb,
+        RenderAssetUsages::default(),
     )
 }

@@ -8,7 +8,7 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See file LICENSE_1_0.txt or a copy at http://www.boost.org/LICENSE_1_0.txt)
 //
-use {cgmath::*, glium::glutin};
+use cgmath::*; //, glium::glutin};
 
 // @todo ❌ this converts to an entity with some components and a system to process movement
 pub struct CameraState {
@@ -146,26 +146,26 @@ impl CameraState {
         // trace!("Camera pos {:?} dir {:?}", self.position, self.direction);
     }
 
-    pub fn process_input(&mut self, event: &glutin::event::WindowEvent) {
-        let input = match *event {
-            glutin::event::WindowEvent::KeyboardInput { input, .. } => input,
-            _ => return,
-        };
-        let pressed = input.state == glutin::event::ElementState::Pressed;
-        let key = match input.virtual_keycode {
-            Some(key) => key,
-            None => return,
-        };
-        match key {
-            glutin::event::VirtualKeyCode::Up => self.moving_up = pressed,
-            glutin::event::VirtualKeyCode::Down => self.moving_down = pressed,
-            glutin::event::VirtualKeyCode::Left => self.rotating_left = pressed,
-            glutin::event::VirtualKeyCode::Right => self.rotating_right = pressed,
-            glutin::event::VirtualKeyCode::A => self.moving_left = pressed,
-            glutin::event::VirtualKeyCode::D => self.moving_right = pressed,
-            glutin::event::VirtualKeyCode::W => self.moving_forward = pressed,
-            glutin::event::VirtualKeyCode::S => self.moving_backward = pressed,
-            _ => (),
-        };
-    }
+    // pub fn process_input(&mut self, event: &glutin::event::WindowEvent) {
+    //     let input = match *event {
+    //         glutin::event::WindowEvent::KeyboardInput { input, .. } => input,
+    //         _ => return,
+    //     };
+    //     let pressed = input.state == glutin::event::ElementState::Pressed;
+    //     let key = match input.virtual_keycode {
+    //         Some(key) => key,
+    //         None => return,
+    //     };
+    //     match key {
+    //         glutin::event::VirtualKeyCode::Up => self.moving_up = pressed,
+    //         glutin::event::VirtualKeyCode::Down => self.moving_down = pressed,
+    //         glutin::event::VirtualKeyCode::Left => self.rotating_left = pressed,
+    //         glutin::event::VirtualKeyCode::Right => self.rotating_right = pressed,
+    //         glutin::event::VirtualKeyCode::A => self.moving_left = pressed,
+    //         glutin::event::VirtualKeyCode::D => self.moving_right = pressed,
+    //         glutin::event::VirtualKeyCode::W => self.moving_forward = pressed,
+    //         glutin::event::VirtualKeyCode::S => self.moving_backward = pressed,
+    //         _ => (),
+    //     };
+    // }
 }

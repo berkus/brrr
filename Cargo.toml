@@ -11,24 +11,21 @@ anyhow = "1.0"
 thiserror = "1.0"
 culpa = "1.0"
 # Release
-bevy = "0.12"
+bevy = "0.13"
 # Debug
-# bevy = { version = "0.12", features = ["dynamic_linking"] }
-bevy_egui = "0.24"
-bevy_asset_loader = "0.19"
-smooth-bevy-cameras = "0.10"
+# bevy = { version = "0.13", features = ["dynamic_linking"] }
+# bevy_egui = "0.26"
+# bevy-inspector-egui = { version = "0.23", features = ["highlight_changes"] }
+# egui = "0.27"
+bevy_asset_loader = "0.20"
+smooth-bevy-cameras = "0.11"
 byteorder = "1.5"
 log = "0.4"
-derive_builder = "0.13"
-glium = "0.32"
-image = "0.24"
-# then move on to vulkano = "0.19"
+image = "0.25"                                            # for png encoder
 cgmath = "0.18"
-id_tree = "1.8"
 num = "0.4"
 fern = "0.6"
 chrono = "0.4"
-bevy-inspector-egui = { version = "0.22.1", features = ["highlight_changes"] }
 rgb = "0.8.37"
 imgref = { version = "1.10.1", default-features = false }
 

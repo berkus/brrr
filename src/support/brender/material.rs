@@ -167,12 +167,10 @@ impl FromStream for Material {
                 Chunk::End() => break,
                 Chunk::FileInfo(FileInfoChunk { file_type, .. }) => {
                     if file_type != file_type::MATERIAL {
-                        throw!(
-                            Error::InvalidResourceType // {
-                                                       //     expected: file_type::MATERIAL,
-                                                       //     received: file_type,
-                                                       // }
-                        );
+                        throw!(Error::InvalidFileType {
+                            expected: file_type::MATERIAL,
+                            received: file_type,
+                        });
                     }
                 }
                 Chunk::Material(material) => {
