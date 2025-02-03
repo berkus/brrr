@@ -8,93 +8,102 @@
 //
 use {
     crate::support::{
-        actor::{Actor, ActorNode},
-        material::Material,
-        mesh::Mesh,
+        brender::{
+            actor::Actor, material::Material, model::Model, pixelmap::PixelMap, resource::LoadMany,
+        },
         path_subst,
-        texture::PixelMap,
-        Error,
     },
+    anyhow::{anyhow, Error, Result},
+    bevy::prelude::*,
     cgmath::Vector3,
-    log::*,
+    culpa::throws,
+    // log::*,
     std::{
         collections::{HashMap, HashSet},
         fs::File,
         io::{BufRead, BufReader},
-        iter::Iterator,
-        path::{Path, PathBuf},
+        path::Path,
     },
 };
 
 // Car assembles the gameplay object (a car in this case) from various model and texture files.
+#[derive(Component)]
 pub struct Car {
     pub name: String,
-    pub actors: Actor,
-    pub meshes: HashMap<String, Mesh>,
+    pub actors: Vec<Box<Actor>>,
+    pub meshes: HashMap<String, Model>,
     pub materials: HashMap<String, Material>,
     pub textures: HashMap<String, PixelMap>,
     pub base_translation: Vector3<f32>,
 }
 
 /// Expect next line to match provided text exactly.
-fn expect_match<Iter: Iterator<Item = String>>(input: &mut Iter, text: &str) {
+fn expect_match(input: &mut impl Iterator<Item = String>, text: &str) -> Result<()> {
     if let Some(line) = input.next() {
         if line == text {
-            return;
+            return Ok(());
         }
-        panic!("Expected {:?} but got {:?}", text, line);
+        return Err(anyhow!("Expected {:?} but got {:?}", text, line));
     }
-    panic!("Expected {:?} but got empty line", text);
+    Err(anyhow!("Expected {:?} but got empty line", text))
 }
 
 /// Parse a three-component vector from a comma-separated string.
-fn parse_vector(line: &String) -> Vector3<f32> {
-    let line: Vec<f32> = line.split(',').map(|i| i.trim().parse().unwrap()).collect();
+#[throws]
+fn parse_vector(line: &str) -> Vector3<f32> {
+    let line: Result<Vec<f32>, _> = line.split(',').map(|i| i.trim().parse::<f32>()).collect();
+    let line = line?;
     Vector3::from((line[0], line[1], line[2]))
 }
 
+fn consume_line(input: &mut impl Iterator<Item = String>) -> Result<String> {
+    input.next().ok_or(anyhow!("Bad input data"))
+}
+
 /// Read systems in a single damage spec clause.
-fn read_systems<Iter: Iterator<Item = String>>(input: &mut Iter) {
+fn read_systems(input: &mut impl Iterator<Item = String>) -> Result<()> {
     // read condition flag for this clause
     /*let condition =*/
-    input.next().unwrap();
+    consume_line(input)?;
     // read systems count, read this many systems
-    let systems_count = input.next().unwrap().parse().unwrap();
+    let systems_count = consume_line(input)?.parse()?;
     for _ in 0..systems_count {
-        input.next();
+        consume_line(input)?;
     }
+    Ok(())
 }
 
 /// Read all damage spec clauses.
-fn read_clauses<Iter: Iterator<Item = String>>(input: &mut Iter) {
+fn read_clauses(input: &mut impl Iterator<Item = String>) -> Result<()> {
     // read clause count, read this many systems
-    let clause_count = input.next().unwrap().parse().unwrap();
+    let clause_count = consume_line(input)?.parse()?;
     for _ in 0..clause_count {
-        read_systems(input);
+        read_systems(input)?;
     }
+    Ok(())
 }
 
 /// Read a vector of strings.
-fn read_vector<Iter: Iterator<Item = String>>(input: &mut Iter) -> Vec<String> {
+fn read_vector(input: &mut impl Iterator<Item = String>) -> Result<Vec<String>> {
     // read vector size, read this many strings
-    let size = input.next().unwrap().parse().unwrap();
+    let size = consume_line(input)?.parse()?;
     let mut vec = Vec::<String>::with_capacity(size);
     for _ in 0..size {
-        vec.push(input.next().unwrap());
+        vec.push(consume_line(input)?);
     }
-    vec
+    Ok(vec)
 }
 
-fn read_funk<Iter: Iterator<Item = String>>(input: &mut Iter) {
-    expect_match(input, "START OF FUNK");
+fn read_funk(input: &mut impl Iterator<Item = String>) -> Result<()> {
+    expect_match(input, "START OF FUNK")?;
     // for now just ignore everything here, read until END OF FUNK
     loop {
-        // @todo read funk loop with NEXT FUNK as trigger
+        // @todo ❌ read funk loop with NEXT FUNK as trigger
         // read_funk();
         // NEXT FUNK
-        let line = input.next().unwrap();
+        let line = consume_line(input)?;
         if line == "END OF FUNK" {
-            return;
+            return Ok(());
         }
     }
 }
@@ -102,48 +111,49 @@ fn read_funk<Iter: Iterator<Item = String>>(input: &mut Iter) {
 struct Groove {}
 
 // Read a single groove
-// fn read_groove<Iter: Iterator<Item=String>>(input: &mut Iter) -> Groove {
+// fn read_groove(input: &mut impl Iterator<Item = String>) -> Groove {
 // }
 
-fn read_grooves<Iter: Iterator<Item = String>>(input: &mut Iter) {
-    expect_match(input, "START OF GROOVE");
+fn read_grooves(input: &mut impl Iterator<Item = String>) -> Result<()> {
+    expect_match(input, "START OF GROOVE")?;
     // for now just ignore everything here, read until END OF GROOVE
     loop {
-        // @todo read groove loop with NEXT GROOVE as trigger
+        // @todo ❌ read groove loop with NEXT GROOVE as trigger
         // read_groove();
         // NEXT GROOVE
-        let line = input.next().unwrap();
+        let line = consume_line(input)?;
         if line == "END OF GROOVE" {
-            return;
+            return Ok(());
         }
     }
 }
 
 /// A bunch of some matrices and mappings or vertex-pairs, ignore for now.
-fn read_some_metadata<Iter: Iterator<Item = String>>(input: &mut Iter) {
-    input.next(); // 0.700000
-    input.next(); // 0.050000,0.300000
-    input.next(); // 0.050000
-    input.next(); // 0.050000
-    input.next(); // 0.000000
-    input.next(); // 0.000000
-    let size = input.next().unwrap().parse().unwrap();
+fn read_some_metadata(input: &mut impl Iterator<Item = String>) -> Result<()> {
+    consume_line(input)?; // 0.700000
+    consume_line(input)?; // 0.050000,0.300000
+    consume_line(input)?; // 0.050000
+    consume_line(input)?; // 0.050000
+    consume_line(input)?; // 0.000000
+    consume_line(input)?; // 0.000000
+    let size = consume_line(input)?.parse()?;
     for _ in 0..size {
-        input.next(); // 11
-        input.next(); // -0.107444, -0.080211, 0.106640
-        input.next(); // -0.057444, 0.054463, 0.206640
-        input.next(); // 0.038245, 0.352418, 0.220975
-        input.next(); // 0.111755, 0.051602, 0.079025
-        let pair_count = input.next().unwrap().parse().unwrap();
+        consume_line(input)?; // 11
+        consume_line(input)?; // -0.107444, -0.080211, 0.106640
+        consume_line(input)?; // -0.057444, 0.054463, 0.206640
+        consume_line(input)?; // 0.038245, 0.352418, 0.220975
+        consume_line(input)?; // 0.111755, 0.051602, 0.079025
+        let pair_count = consume_line(input)?.parse()?;
         for _ in 0..pair_count {
-            input.next();
-            input.next();
+            consume_line(input)?;
+            consume_line(input)?;
         }
     }
+    Ok(())
 }
 
 // @fixme used to patch actors now
-// @todo should support extra wheels
+// @todo ❌ should support extra wheels
 pub struct Mechanics {
     pub lrwheel_pos: Vector3<f32>,
     pub rrwheel_pos: Vector3<f32>,
@@ -151,22 +161,20 @@ pub struct Mechanics {
     pub rfwheel_pos: Vector3<f32>,
 }
 
-fn read_mechanics_block_v1_1<Iter: Iterator<Item = String>>(
-    input: &mut Iter,
-) -> Result<Mechanics, Error> {
-    let lrwheel_pos = parse_vector(&input.next().unwrap());
+fn read_mechanics_block_v1_1(input: &mut impl Iterator<Item = String>) -> Result<Mechanics> {
+    let lrwheel_pos = parse_vector(&consume_line(input)?)?;
     trace!("Left rear wheel position: {:?}", lrwheel_pos);
 
-    let rrwheel_pos = parse_vector(&input.next().unwrap());
+    let rrwheel_pos = parse_vector(&consume_line(input)?)?;
     trace!("Right rear wheel position: {:?}", rrwheel_pos);
 
-    let lfwheel_pos = parse_vector(&input.next().unwrap());
+    let lfwheel_pos = parse_vector(&consume_line(input)?)?;
     trace!("Left front wheel position: {:?}", lfwheel_pos);
 
-    let rfwheel_pos = parse_vector(&input.next().unwrap());
+    let rfwheel_pos = parse_vector(&consume_line(input)?)?;
     trace!("Right front wheel position: {:?}", rfwheel_pos);
 
-    let centre_of_mass_pos = parse_vector(&input.next().unwrap());
+    let centre_of_mass_pos = parse_vector(&consume_line(input)?)?;
     trace!("Centre of mass position: {:?}", centre_of_mass_pos);
 
     Ok(Mechanics {
@@ -177,152 +185,148 @@ fn read_mechanics_block_v1_1<Iter: Iterator<Item = String>>(
     })
 }
 
-fn read_mechanics_block_v1_1_v3<Iter: Iterator<Item = String>>(input: &mut Iter) {
-    let min_bb = parse_vector(&input.next().unwrap());
-    let max_bb = parse_vector(&input.next().unwrap());
+fn read_mechanics_block_v1_1_v3(input: &mut impl Iterator<Item = String>) -> Result<()> {
+    let min_bb = parse_vector(&consume_line(input)?);
+    let max_bb = parse_vector(&consume_line(input)?);
     trace!("Bounding box: ({:?} - {:?})", min_bb, max_bb);
+    Ok(())
 }
 
 // Version 2 contains count for bounding boxes (which is always 1, that's why it's removed in ver 3)
-fn read_mechanics_block_v1_1_v2<Iter: Iterator<Item = String>>(input: &mut Iter) {
-    expect_match(input, "1");
-    read_mechanics_block_v1_1_v3(input);
+fn read_mechanics_block_v1_1_v2(input: &mut impl Iterator<Item = String>) -> Result<()> {
+    expect_match(input, "1")?;
+    read_mechanics_block_v1_1_v3(input)
 }
 
-fn read_mechanics_block_v1_2<Iter: Iterator<Item = String>>(input: &mut Iter) {
+fn read_mechanics_block_v1_2(input: &mut impl Iterator<Item = String>) -> Result<()> {
     // 0.5                                     // min turning circle radius
-    input.next();
+    consume_line(input)?;
     // 0.025,  0.025                           // suspension give (forward, back)
-    input.next();
+    consume_line(input)?;
     // 0.090                  // ride height (must be more than miny in bounding box )
-    input.next();
+    consume_line(input)?;
     // 0.5                                     // damping factor
-    input.next();
+    consume_line(input)?;
     // 1.5                                     // mass in tonnes
-    input.next();
+    consume_line(input)?;
     // 1                                       // fractional reduction in friction when slipping
-    input.next();
+    consume_line(input)?;
     // 79, 80                                  // friction angle ( front and rear )
-    input.next();
+    consume_line(input)?;
     // 0.4,    0.2,    0.816 // width, height, length(0.816, 1.216) for angular momentum calculation
-    input.next();
+    consume_line(input)?;
+    Ok(())
 }
 
-fn read_mechanics_block_v1_3<Iter: Iterator<Item = String>>(input: &mut Iter) {
+fn read_mechanics_block_v1_3(input: &mut impl Iterator<Item = String>) -> Result<()> {
     // 0.05, 0.05                              // rolling resistance front and back
-    input.next();
+    consume_line(input)?;
     // 6                                       // number of gears
-    input.next();
+    consume_line(input)?;
     // 200                                     // speed at red line in highest gear
-    input.next();
+    consume_line(input)?;
     // 4                           // acceleration in highest gear m/s^2 (i.e. engine strength)
-    input.next();
+    consume_line(input)?;
+    Ok(())
 }
 
-fn read_mechanics_block_v2<Iter: Iterator<Item = String>>(input: &mut Iter) {
+fn read_mechanics_block_v2(input: &mut impl Iterator<Item = String>) -> Result<()> {
     // 2.0                                     // traction fractional multiplier v. 2
-    input.next();
+    consume_line(input)?;
     // 50                                      // speed at which down force = weight v. 2
-    input.next();
+    consume_line(input)?;
     // 1.0                                     // brake multiplier, 1 = nomral brakes v. 2
-    input.next();
+    consume_line(input)?;
     // 1.0                                     // increase in brakes per second 1 = normal v. 2
-    input.next();
+    consume_line(input)?;
+    Ok(())
 }
 
-fn read_mechanics_block_v3<Iter: Iterator<Item = String>>(input: &mut Iter) {
+fn read_mechanics_block_v3(input: &mut impl Iterator<Item = String>) -> Result<()> {
     // 3
     // 0,-0.18,-0.52                               // extra point 1            v. 3
     // -0.07,0.07,0.18                         // extra point 2            v. 3
     // 0.07,0.07,0.18                          // extra point 3            v. 3
-    read_vector(input);
+    read_vector(input)?; // @todo ❌ must be a vector of Vec3tors
+    Ok(())
 }
 
-fn read_mechanics_v2<Iter: Iterator<Item = String>>(input: &mut Iter) -> Result<Mechanics, Error> {
+fn read_mechanics_v2(input: &mut impl Iterator<Item = String>) -> Result<Mechanics> {
     let mech = read_mechanics_block_v1_1(input)?;
-    read_mechanics_block_v1_1_v2(input);
-    read_mechanics_block_v1_2(input);
-    read_mechanics_block_v2(input);
-    read_mechanics_block_v1_3(input);
+    read_mechanics_block_v1_1_v2(input)?;
+    read_mechanics_block_v1_2(input)?;
+    read_mechanics_block_v2(input)?;
+    read_mechanics_block_v1_3(input)?;
     Ok(mech)
 }
 
-fn read_mechanics_v3<Iter: Iterator<Item = String>>(input: &mut Iter) -> Result<Mechanics, Error> {
+fn read_mechanics_v3(input: &mut impl Iterator<Item = String>) -> Result<Mechanics> {
     let mech = read_mechanics_block_v1_1(input)?;
-    read_mechanics_block_v1_1_v3(input);
-    read_mechanics_block_v3(input);
-    read_mechanics_block_v1_2(input);
-    read_mechanics_block_v2(input);
-    read_mechanics_block_v1_3(input);
+    read_mechanics_block_v1_1_v3(input)?;
+    read_mechanics_block_v3(input)?;
+    read_mechanics_block_v1_2(input)?;
+    read_mechanics_block_v2(input)?;
+    read_mechanics_block_v1_3(input)?;
     Ok(mech)
 }
 
-fn read_mechanics_v4<Iter: Iterator<Item = String>>(input: &mut Iter) -> Result<Mechanics, Error> {
+fn read_mechanics_v4(input: &mut impl Iterator<Item = String>) -> Result<Mechanics> {
     read_mechanics_v3(input)
 }
 
-fn read_meshes(
-    fname: &String,
-    load_models: &Vec<String>,
-    car_meshes: &mut HashMap<String, Mesh>,
-) -> Result<(), Error> {
-    let mut load_models = load_models.clone();
+fn read_meshes<P: AsRef<Path>>(
+    fname: P,
+    load_models: &[String],
+    car_meshes: &mut HashMap<String, Model>,
+) -> Result<()> {
+    let mut load_models: Vec<String> = load_models.to_vec();
     load_models.sort();
     load_models.dedup();
     debug!("Models to load: {:?}", load_models);
 
     // Now iterate all meshes and load them.
     for mesh in load_models {
-        let mut mesh_file_name = PathBuf::from(&fname);
+        let mut mesh_file_name = fname.as_ref().to_path_buf();
         mesh_file_name.set_file_name(mesh);
-        let mesh_file_name = path_subst(
-            &mesh_file_name,
-            &Path::new("MODELS"),
-            Some(String::from("DAT")),
-        );
-        info!("### Opening mesh file {:?}", mesh_file_name);
-        let meshes = Mesh::load_from(
+        let mesh_file_name = path_subst(mesh_file_name, "MODELS".into(), Some("DAT".into()))?;
+        info!("### Opening model file {:?}", mesh_file_name);
+        let meshes = Model::load_many(
             mesh_file_name
                 .clone()
                 .into_os_string()
                 .into_string()
                 .unwrap(),
         )?;
-        for mesh in meshes {
-            car_meshes.insert(mesh.name.clone(), mesh);
+        for model in meshes {
+            car_meshes.insert(model.identifier.clone(), *model); // @todo ❌ populate World resources
         }
     }
     Ok(())
 }
 
-fn read_materials(
-    fname: &String,
+// @todo ❌ this should be added to the TextureAtlas
+fn read_materials<P: AsRef<Path>>(
+    fname: P,
     load_materials: &HashSet<String>,
-    car_materials: &mut HashMap<String, Material>,
-) -> Result<(), Error> {
+    _car_materials: &mut HashMap<String, Material>,
+) -> Result<()> {
     for material in load_materials {
-        let mut mat_file_name = PathBuf::from(&fname);
+        let mut mat_file_name = fname.as_ref().to_path_buf();
         mat_file_name.set_file_name(material);
-        let mat_file_name = path_subst(&mat_file_name, &Path::new("MATERIAL"), None);
+        let mat_file_name = path_subst(mat_file_name, "MATERIAL".into(), None)?;
         info!("### Opening material {:?}", mat_file_name);
-        let materials = Material::load_from(
-            mat_file_name
-                .clone()
-                .into_os_string()
-                .into_string()
-                .unwrap(),
-        )?;
-        for mat in materials {
-            car_materials.insert(mat.name.clone(), mat);
-        }
+        let _materials = Material::load_many(mat_file_name)?;
+        // for mat in materials {
+        //     car_materials.insert(mat.name.clone(), mat); // @todo ❌ make this Handle<Texture>
+        // }
     }
     Ok(())
 }
 
 impl Car {
     pub fn dump(&self) {
-        self.actors.dump();
-        self.actors.dump_actor_points();
+        // self.actors.dump();
+        // self.actors.dump_actor_points();
         for tex in &self.textures {
             println!("Texture {}: {}", tex.0, tex.1);
         }
@@ -341,103 +345,105 @@ impl Car {
         }
     }
 
-    pub fn load_from(fname: String) -> Result<Car, Error> {
+    pub fn load_from<P: AsRef<Path> + std::fmt::Debug>(fname: P) -> Result<Car> {
         // Load description file.
-        let description_file_name = path_subst(
-            &Path::new(fname.as_str()),
-            &Path::new("CARS"),
-            Some(String::from("ENC")),
-        );
-        info!("### Opening car {:?}", description_file_name);
+        // let description_file_name = path_subst(fname, "CARS", Some("ENC".into()))?;
+        info!("### Opening car {:?}", fname);
 
-        let description_file = File::open(description_file_name)?;
-        let description_file = BufReader::new(description_file);
+        let description_file = BufReader::new(File::open(fname.as_ref())?);
 
         let mut input_lines = description_file
             .lines()
-            .map(|line| line.unwrap())
+            .map_while(Result::ok)
             .filter(|line| !line.starts_with("//")) // Skip whole-line comments
             .filter(|line| !line.is_empty()) // Skip empty lines
             // Separate in-line comments from data
-            .map(|line| line.split("//").next().unwrap().trim().to_owned());
+            .map(|line| {
+                line.split("//")
+                    .next()
+                    .map(|x| x.trim())
+                    .map(|x| x.to_owned())
+                    .unwrap_or("".into())
+            })
+            .filter(|line| !line.is_empty());
 
-        let car_name = input_lines.next().unwrap();
+        let car_name = consume_line(&mut input_lines)?;
         debug!("Car name {}", car_name);
 
-        expect_match(&mut input_lines, "START OF DRIVABLE STUFF");
+        expect_match(&mut input_lines, "START OF DRIVABLE STUFF")?;
 
-        let driver_head_3d_offset = parse_vector(&input_lines.next().unwrap());
+        let driver_head_3d_offset = parse_vector(&consume_line(&mut input_lines)?);
         trace!(
             "Offset of driver's head in 3D space {:?}",
             driver_head_3d_offset
         );
 
-        let head_turn_angles = input_lines.next().unwrap();
+        let head_turn_angles = consume_line(&mut input_lines)?;
         trace!(
             "Angles to turn to make head go left and right {}",
             head_turn_angles
         );
 
-        let mirror_3d_offset_and_fov = input_lines.next().unwrap();
+        let mirror_3d_offset_and_fov = consume_line(&mut input_lines)?;
         trace!(
             "Offset of 'mirror camera' in 3D space, viewing angle of mirror {}",
             mirror_3d_offset_and_fov
         );
 
-        let pratcam_borders = input_lines.next().unwrap();
+        let pratcam_borders = consume_line(&mut input_lines)?;
         trace!(
             "Pratcam border names (left, top, right, bottom) {}",
             pratcam_borders
         );
 
-        expect_match(&mut input_lines, "END OF DRIVABLE STUFF");
+        expect_match(&mut input_lines, "END OF DRIVABLE STUFF")?;
 
-        let engine_noise = input_lines.next().unwrap();
+        let engine_noise = consume_line(&mut input_lines)?;
         trace!(
             "Engine noise (normal, enclosed space, underwater) {}",
             engine_noise
         );
 
-        let stealworthy = input_lines.next().unwrap();
+        let stealworthy = consume_line(&mut input_lines)?;
         trace!("Cannot be stolen (without cheat): {}", stealworthy);
 
-        read_clauses(&mut input_lines);
-        read_clauses(&mut input_lines);
-        read_clauses(&mut input_lines);
-        read_clauses(&mut input_lines);
-        read_clauses(&mut input_lines);
-        read_clauses(&mut input_lines);
+        // @todo ❌ who knows what...
+        read_clauses(&mut input_lines)?;
+        read_clauses(&mut input_lines)?;
+        read_clauses(&mut input_lines)?;
+        read_clauses(&mut input_lines)?;
+        read_clauses(&mut input_lines)?;
+        read_clauses(&mut input_lines)?;
 
-        let grid_image = input_lines.next().unwrap();
+        let grid_image = consume_line(&mut input_lines)?;
         trace!("Grid image (opponent, frank, annie): {}", grid_image);
 
-        let mut load_pixmaps = read_vector(&mut input_lines);
-        load_pixmaps.append(&mut read_vector(&mut input_lines));
-        load_pixmaps.append(&mut read_vector(&mut input_lines));
+        let mut load_pixmaps = read_vector(&mut input_lines)?;
+        load_pixmaps.append(&mut read_vector(&mut input_lines)?);
+        load_pixmaps.append(&mut read_vector(&mut input_lines)?);
 
-        let load_shadetable = read_vector(&mut input_lines);
+        let load_shadetable = read_vector(&mut input_lines)?;
         debug!("Shadetable to load: {:?}", load_shadetable);
 
-        let mut load_materials = read_vector(&mut input_lines);
-        load_materials.append(&mut read_vector(&mut input_lines));
-        load_materials.append(&mut read_vector(&mut input_lines));
+        let mut load_materials = read_vector(&mut input_lines)?;
+        load_materials.append(&mut read_vector(&mut input_lines)?);
+        load_materials.append(&mut read_vector(&mut input_lines)?);
 
-        let mut load_models = read_vector(&mut input_lines);
+        let mut load_models = read_vector(&mut input_lines)?;
 
-        let load_actors = read_vector(&mut input_lines);
-        let load_actors: HashMap<isize, String> = load_actors
+        let load_actors: HashMap<isize, String> = read_vector(&mut input_lines)?
             .iter()
-            .map(|act| act.split(","))
+            .map(|act| act.split(','))
             .map(|mut split| {
                 (
-                    split.next().unwrap().parse().unwrap(),
-                    String::from(split.next().unwrap()),
+                    split.next().and_then(|id| id.parse().ok()).unwrap_or(0),
+                    split.next().map(String::from).unwrap_or_else(|| "".into()),
                 )
             })
             .collect();
         debug!("Actors to load: {:?}", load_actors);
 
-        let reflective_material = input_lines.next().unwrap();
+        let reflective_material = consume_line(&mut input_lines)?;
         trace!(
             "Name of reflective screen material (or none if non-reflective): {}",
             reflective_material
@@ -446,82 +452,81 @@ impl Car {
         // Number of steerable wheels
         // GroovyFunkRef of 1st steerable wheel -- this is index in the GROOVE array below
         // GroovyFunkRef of 2nd steerable wheel
-        let steerable_wheels = read_vector(&mut input_lines);
+        let steerable_wheels = read_vector(&mut input_lines)?;
         trace!("Steerable wheels GroovyFunkRefs: {:?}", steerable_wheels);
 
-        let lfsus_gfref = input_lines.next().unwrap();
+        let lfsus_gfref = consume_line(&mut input_lines)?;
         trace!("Left-front suspension parts GroovyFunkRef: {}", lfsus_gfref);
 
-        let rfsus_gfref = input_lines.next().unwrap();
+        let rfsus_gfref = consume_line(&mut input_lines)?;
         trace!(
             "Right-front suspension parts GroovyFunkRef: {}",
             rfsus_gfref
         );
 
-        let lrsus_gfref = input_lines.next().unwrap();
+        let lrsus_gfref = consume_line(&mut input_lines)?;
         trace!("Left-rear suspension parts GroovyFunkRef: {}", lrsus_gfref);
 
-        let rrsus_gfref = input_lines.next().unwrap();
+        let rrsus_gfref = consume_line(&mut input_lines)?;
         trace!("Right-rear suspension parts GroovyFunkRef: {}", rrsus_gfref);
 
-        let driven_wheels_gfref = input_lines.next().unwrap();
+        let driven_wheels_gfref = consume_line(&mut input_lines)?;
         trace!(
             "Driven wheels GroovyFunkRefs (for spinning) - MUST BE 4 ITEMS: {}",
             driven_wheels_gfref
         );
 
-        let nondriven_wheels_gfref = input_lines.next().unwrap();
+        let nondriven_wheels_gfref = consume_line(&mut input_lines)?;
         trace!(
             "Non-driven wheels GroovyFunkRefs (for spinning) - MUST BE 4 ITEMS: {}",
             nondriven_wheels_gfref
         );
 
-        let driven_wheels_diameter = input_lines.next().unwrap();
+        let driven_wheels_diameter = consume_line(&mut input_lines)?;
         trace!("Driven wheels diameter: {}", driven_wheels_diameter);
 
-        let nondriven_wheels_diameter = input_lines.next().unwrap();
+        let nondriven_wheels_diameter = consume_line(&mut input_lines)?;
         trace!("Non-driven wheels diameter: {}", nondriven_wheels_diameter);
 
-        read_funk(&mut input_lines);
-        read_grooves(&mut input_lines);
+        read_funk(&mut input_lines)?;
+        read_grooves(&mut input_lines)?;
 
-        read_some_metadata(&mut input_lines);
-        read_some_metadata(&mut input_lines);
-        read_some_metadata(&mut input_lines);
+        // @todo ❌ who knows what...
+        read_some_metadata(&mut input_lines)?;
+        read_some_metadata(&mut input_lines)?;
+        read_some_metadata(&mut input_lines)?;
 
-        let mechanics = input_lines.next().unwrap();
+        let mechanics = consume_line(&mut input_lines)?; // @fixme ❌ Can't use expect_match() here
         if !mechanics.starts_with("START OF MECHANICS STUFF") {
-            panic!(
+            return Err(anyhow!(
                 "Expected START OF MECHANICS STUFF, got {:?} instead",
                 mechanics
-            );
+            ));
         }
         let version = mechanics
             .split(" version ")
-            .skip(1)
-            .next()
-            .unwrap()
-            .parse()
-            .unwrap();
+            .nth(1)
+            .map(|x| x.parse())
+            .ok_or(anyhow!("Bad input data"))??;
 
         let _mech = match version {
             2 => read_mechanics_v2(&mut input_lines),
             3 => read_mechanics_v3(&mut input_lines),
             4 => read_mechanics_v4(&mut input_lines),
-            x => panic!("Unsupported mechanics version {}", x),
+            x => return Err(anyhow!("Unsupported mechanics version {}", x)),
         }?;
 
-        expect_match(&mut input_lines, "END OF MECHANICS STUFF");
+        expect_match(&mut input_lines, "END OF MECHANICS STUFF")?;
 
-        let some_materials = read_vector(&mut input_lines);
+        let some_materials = read_vector(&mut input_lines)?;
         debug!("Some other materials to use: {:?}", some_materials);
 
-        // @todo More post-mechanics stuff
+        // @todo ❌ More post-mechanics stuff
 
         //
         // Meshes
         //
-        let mut car_meshes = HashMap::<String, Mesh>::new();
+        let mut car_meshes = HashMap::<String, Model>::new();
 
         debug!("Meshes to load: {:?}", load_models);
 
@@ -529,29 +534,22 @@ impl Car {
         read_meshes(&fname, &load_models, &mut car_meshes)?;
 
         // Load actor file.
-        let mut actor_file_name = PathBuf::from(&fname);
+        let mut actor_file_name = fname.as_ref().to_path_buf();
         let idx: isize = 0;
         actor_file_name.set_file_name(&load_actors[&idx]); // Read mipmap 0 actor
-        let actor_file_name = path_subst(
-            &actor_file_name,
-            &Path::new("ACTORS"),
-            Some(String::from("ACT")),
-        );
+        let actor_file_name = path_subst(actor_file_name, "ACTORS".into(), Some("ACT".into()))?;
         info!("### Opening actor {:?}", actor_file_name);
-        let car_actors = Actor::load_from(actor_file_name.into_os_string().into_string().unwrap())?;
+        let car_actors = Actor::load_many(actor_file_name)?;
 
         // Read meshes referenced from actor file
         load_models.clear();
-        for actor in car_actors.traverse() {
-            match actor.data() {
-                &ActorNode::MeshfileRef(ref name) => {
-                    if !car_meshes.contains_key(name) {
-                        load_models.push(name.clone())
-                    }
-                }
-                _ => (),
-            }
-        }
+        // for actor in car_actors.traverse() {
+        //     if let ActorNode::MeshfileRef(name) = actor.data() {
+        //         if !car_meshes.contains_key(name) {
+        //             load_models.push(name.clone())
+        //         }
+        //     }
+        // }
 
         debug!("Extra meshes to load: {:?}", load_models);
         read_meshes(&fname, &load_models, &mut car_meshes)?;
@@ -559,8 +557,7 @@ impl Car {
         //
         // Materials
         //
-        let mut load_materials: HashSet<String> =
-            load_materials.iter().map(|s| s.clone()).collect();
+        let mut load_materials: HashSet<String> = load_materials.iter().cloned().collect();
         debug!("Materials to load: {:?}", load_materials);
 
         let mut car_materials = HashMap::<String, Material>::new();
@@ -578,39 +575,32 @@ impl Car {
         read_materials(&fname, &load_materials, &mut car_materials)?;
 
         // Load palette from PIX file.
-        let mut pal_file_name = PathBuf::from(&fname);
+        let mut pal_file_name = fname.as_ref().to_path_buf();
         pal_file_name.set_file_name("DRRENDER.PAL");
-        let pal_file_name = path_subst(&pal_file_name, &Path::new("REG/PALETTES"), None);
+        let pal_file_name = path_subst(pal_file_name, "REG/PALETTES".into(), None)?;
         info!("### Opening palette {:?}", pal_file_name);
-        let palette =
-            &PixelMap::load_from(pal_file_name.into_os_string().into_string().unwrap())?[0];
+        let palette = &PixelMap::load_many(pal_file_name)?[0]; // @todo Insert into World resources
 
         for x in 0..palette.units {
             trace!(
                 "Palette alpha {}",
-                palette.data[(x * palette.unit_bytes + 0) as usize]
+                palette.data[(x * palette.unit_bytes/*+ 0*/) as usize]
             );
         }
 
         let load_pixmaps: HashSet<_> = load_pixmaps.iter().collect();
         debug!("Pixmaps to load: {:?}", load_pixmaps);
 
-        let mut car_textures = HashMap::<String, PixelMap>::new();
+        let car_textures = HashMap::<String, PixelMap>::new();
         for pixmap in load_pixmaps {
-            let mut pix_file_name = PathBuf::from(&fname);
+            let mut pix_file_name = fname.as_ref().to_path_buf();
             pix_file_name.set_file_name(pixmap);
-            let pix_file_name = path_subst(&pix_file_name, &Path::new("PIXELMAP"), None);
+            let pix_file_name = path_subst(pix_file_name, "PIXELMAP".into(), None)?;
             info!("### Opening pixelmap {:?}", pix_file_name);
-            let pix = PixelMap::load_from(
-                pix_file_name
-                    .clone()
-                    .into_os_string()
-                    .into_string()
-                    .unwrap(),
-            )?;
-            for pmap in pix {
-                let pmap = pmap.remap_via(&palette)?;
-                car_textures.insert(pmap.name.clone(), pmap);
+            let pix = PixelMap::load_many(pix_file_name)?;
+            for _pmap in pix {
+                // let pmap = pixelmap::remap_via_palette(pmap, palette)?;
+                // car_textures.insert(pmap.identifier.clone(), pmap);
             }
         }
 

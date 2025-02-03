@@ -1,6 +1,23 @@
- ✔ Render all actors @done (17-09-03 17:42)
- ✔ Fix model composition assembly (wheels in wrong places etc) @done (17-09-05 23:05)
- ✔ Fix texturizer/shader issues @done (17-09-07 21:45)
- ☐ BGLSPIKE.PIX in DecodedData/DATA/PIXELMAP/EAGYELE.PIX - check transparency
- ☐ Convert to megatexture
- ☐ Load models using Kaitai Struct
+ ✅ Render all actors @done (2017-09-03 17:42)
+ ✅ Fix model composition assembly (wheels in wrong places etc) @done (2017-09-05 23:05)
+ ✅ Fix texturizer/shader issues @done (2017-09-07 21:45)
+ ❌ Read and render meshes, maybe only just some... deal with how bevy handles composite actors.
+ ❌ Read textures and add them to bevy::TextureAtlas, refer to them from the meshes.
+     ❌ Convert to megatexture
+     ❌ Texture placement in atlas
+
+ ❌ Resource loading from files
+ ❌ Compose animatable models from disparate Car resources
+    ❌ Load model/actor etc using load stacks - see BRender fileops
+ ❌ Set up bevy animation systems for each model
+ ❌ Set up view and camera
+ ❌ Render
+
+ ❌ BGLSPIKE.PIX in DecodedData/DATA/PIXELMAP/EAGYELE.PIX - check transparency
+    - afaik this is handled slightly differently
+ ❌ Load models using Kaitai Struct
+
+ ❌ https://github.com/BamPeers/rust-ci-github-actions-workflow/blob/main/.github/workflows/release-packaging.yaml
+
+
+See https://github.com/foone/BRender-v1.1.2/blob/main/FW/FILEOPS.C

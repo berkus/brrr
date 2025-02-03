@@ -1,0 +1,118 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Build",
+            "type": "cargo",
+            "command": "build",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "Check",
+            "detail": "Run a compile check",
+            "type": "cargo",
+            "command": "check",
+            "args": [
+                "--all-features",
+                "--all-targets"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            },
+            "group": "build"
+        },
+        {
+            "label": "Run",
+            "type": "cargo",
+            "command": "run",
+            "problemMatcher": [
+                "$rustc"
+            ]
+        },
+        {
+            "label": "Test",
+            "detail": "Runs all tests",
+            "type": "cargo",
+            "command": "test",
+            "args": [
+                "--workspace",
+                "--all-features",
+                "--no-fail-fast",
+                "--",
+                "--nocapture"
+            ],
+            "options": {
+                "env": {
+                    "RUST_LOG": "warn,{{crate_name}}=trace"
+                }
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "Clippy",
+            "detail": "Look for Clippy errors",
+            "type": "cargo",
+            "command": "clippy",
+            "args": [
+                "--all-features",
+                "--all-targets",
+                "--",
+                "-D clippy::all",
+                "-W clippy::pedantic",
+                "-W clippy::nursery"
+            ],
+            "problemMatcher": [],
+            "group": "build",
+            "presentation": {
+                "echo": true,
+                "reveal": "always",
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": true
+            }
+        },
+        {
+            "label": "Format",
+            "detail": "Format all source",
+            "type": "cargo",
+            "command": "fmt",
+            "args": [
+                "--all",
+                "--quiet"
+            ],
+            "problemMatcher": [],
+            "group": "build",
+            "presentation": {
+                "echo": false,
+                "reveal": "never",
+                "panel": "shared",
+                "showReuseMessage": false
+            }
+        }
+    ]
+}

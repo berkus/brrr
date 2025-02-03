@@ -14,6 +14,9 @@ jobs:
     name: Check
     runs-on: ubuntu-latest
     steps:
+      - name: Install required packages
+        run: |
+          sudo apt-get install libasound2-dev libudev-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
@@ -44,6 +47,9 @@ jobs:
     name: Clippy
     runs-on: ubuntu-latest
     steps:
+      - name: Install required packages
+        run: |
+          sudo apt-get install libasound2-dev libudev-dev
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
