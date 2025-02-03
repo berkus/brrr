@@ -8,15 +8,15 @@
 //
 use {
     super::resource::{
-        file_type, ActorChunk, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream,
-        LightChunk, LoadMany, NamedResource, PlaneChunk, ResourceStack, ResourceTag,
-        TransformEulerChunk, TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
-        TransformTranslationChunk,
+        ActorChunk, BoundsChunk, CameraChunk, Chunk, FileInfoChunk, FromStream, LightChunk,
+        LoadMany, NamedResource, PlaneChunk, ResourceStack, ResourceTag, TransformEulerChunk,
+        TransformLookUpChunk, TransformMatrix34Chunk, TransformQuatChunk,
+        TransformTranslationChunk, file_type,
     },
     crate::support::Error,
     bevy::prelude::*,
+    brrr_derive::ResourceTag,
     byteorder::ReadBytesExt,
-    carma_derive::ResourceTag,
     culpa::{throw, throws},
     std::{
         fmt::Debug,

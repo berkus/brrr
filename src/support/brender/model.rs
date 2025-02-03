@@ -1,28 +1,28 @@
 use {
     super::pixelmap::PixelMap,
     crate::support::{
+        Error,
         brender::{
             material::Material,
             pixelmap,
             resource::{
-                file_type, Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream,
-                LoadMany, MaterialIndexChunk, ModelChunk, NamedResource, PivotChunk, ResourceStack,
-                ResourceTag, Vec3f, VertexUV, VertexUvChunk, VerticesChunk,
+                Chunk, FaceMaterialChunk, FacesChunk, FileInfoChunk, FromStream, LoadMany,
+                MaterialIndexChunk, ModelChunk, NamedResource, PivotChunk, ResourceStack,
+                ResourceTag, Vec3f, VertexUV, VertexUvChunk, VerticesChunk, file_type,
             },
         },
-        Error,
     },
     bevy::{
         prelude::*,
         render::{mesh::VertexAttributeValues, render_asset::RenderAssetUsages},
         utils::HashMap,
     },
+    brrr_derive::ResourceTag,
     byteorder::ReadBytesExt,
-    carma_derive::ResourceTag,
     culpa::{throw, throws},
     std::{
         fs::File,
-        io::{prelude::BufRead, BufReader},
+        io::{BufReader, prelude::BufRead},
     },
 };
 
@@ -49,9 +49,19 @@ impl NamedResource for Model {
 
 impl std::fmt::Debug for Model {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}: {} vertices, {} uvs, {} faces, {} material names, {} face materials, pivot {},{},{}",//{} normals,
-            self.identifier, self.vertices.len(), self.vertex_uvs.len(), self.faces.faces.len(),//self.vertex_normals.len(),
-            self.material_names.len(), self.face_material_indices.len(), self.pivot.x, self.pivot.y, self.pivot.z)?;
+        writeln!(
+            f,
+            "{}: {} vertices, {} uvs, {} faces, {} material names, {} face materials, pivot {},{},{}", //{} normals,
+            self.identifier,
+            self.vertices.len(),
+            self.vertex_uvs.len(),
+            self.faces.faces.len(), //self.vertex_normals.len(),
+            self.material_names.len(),
+            self.face_material_indices.len(),
+            self.pivot.x,
+            self.pivot.y,
+            self.pivot.z
+        )?;
         for name in &self.material_names {
             writeln!(f, " MAT: {name}")?;
         }

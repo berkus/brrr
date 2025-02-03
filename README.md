@@ -1,4 +1,4 @@
-# Roadkill
+# Bloody Road Rage Racing
 
 This is a viewer for Carmageddon resource files and models.
 

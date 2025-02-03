@@ -1,11 +1,11 @@
 use {
     super::resource::pixelmap_type,
     crate::support::{
-        brender::resource::{
-            file_type, Chunk, FileInfoChunk, FromStream, LoadMany, NamedResource, PixelMapChunk,
-            PixelsChunk, ResourceStack, ResourceTag,
-        },
         Error,
+        brender::resource::{
+            Chunk, FileInfoChunk, FromStream, LoadMany, NamedResource, PixelMapChunk, PixelsChunk,
+            ResourceStack, ResourceTag, file_type,
+        },
     },
     bevy::{
         log::debug,
@@ -16,13 +16,13 @@ use {
         },
         utils::HashMap,
     },
+    brrr_derive::ResourceTag,
     byteorder::ReadBytesExt,
-    carma_derive::ResourceTag,
     culpa::{throw, throws},
     log::trace,
     std::{
         fs::File,
-        io::{prelude::BufRead, BufReader},
+        io::{BufReader, prelude::BufRead},
     },
 };
 
@@ -118,8 +118,7 @@ impl FromStream for PixelMap {
 
                     trace!(
                         "Pixelmap data in {} units, {} bytes each",
-                        units,
-                        unit_bytes
+                        units, unit_bytes
                     );
                 }
                 Chunk::AddMap() => {

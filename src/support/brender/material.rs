@@ -8,13 +8,13 @@
 //
 use {
     super::resource::{
-        file_type, Chunk, FileInfoChunk, FromStream, LoadMany, MaterialChunk, NamedResource,
-        ResourceStack, ResourceTag,
+        Chunk, FileInfoChunk, FromStream, LoadMany, MaterialChunk, NamedResource, ResourceStack,
+        ResourceTag, file_type,
     },
     crate::support::Error,
     bevy::prelude::*,
+    brrr_derive::ResourceTag,
     byteorder::ReadBytesExt,
-    carma_derive::ResourceTag,
     culpa::{throw, throws},
     std::{
         fs::File,

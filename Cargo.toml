@@ -1,12 +1,13 @@
 [package]
 authors = ["Berkus Decker <berkus+cargo@metta.systems>"]
-edition = "2021"
-name = "carma"
+edition = "2024"
+name = "brrr"
 version = "0.0.3"
 resolver = "2"
+publish = false
 
 [dependencies]
-carma_derive = { path = "./carma_derive" }
+brrr_derive = { path = "./brrr_derive" }
 anyhow = "1.0"
 thiserror = "1.0"
 culpa = "1.0"
@@ -37,10 +38,10 @@ fastdev = ["bevy/dynamic_linking"]
 png = "0.17"
 
 [lib]
-name = "carma"
+name = "brrr"
 
 [[bin]]
-name = "carma"
+name = "brrr"
 
 [[bin]]
 name = "convert_to_png"
