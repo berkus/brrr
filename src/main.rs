@@ -81,9 +81,9 @@ fn load_bunch<T: LoadMany<Outputs = Box<T>> + NamedResource>(
 fn setup_cars(
     mut commands: Commands,
     // asset_server: ResMut<AssetServer>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut images: ResMut<Assets<Image>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+    images: ResMut<Assets<Image>>,
+    materials: ResMut<Assets<StandardMaterial>>,
     // mut textures: ResMut<Assets<Texture>>,
     // mut texture_atlases: ResMut<Assets<TextureAtlas>>,
     mut exit: EventWriter<AppExit>,
@@ -215,7 +215,7 @@ fn setup_cars(
         .into_iter()
         .map(|(_, m)| {
             trace!("{:?}", m);
-            m.bevy_bundles(&meshes, &images, &materials, &mats, &pixmaps)
+            m.bevy_bundles(meshes, images, materials, &mats, &pixmaps)
         })
         .collect();
 
